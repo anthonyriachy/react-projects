@@ -6,7 +6,7 @@ const { Kind } = require("graphql/language");
 const { ApolloServer } = require("apollo-server-express");
 const { MongoClient } = require('mongodb');
 
-const url = 'mongodb://localhost:3000/Issuetracker';
+const url = 'mongodb://localhost/Issuetracker';
 
 let db;
 

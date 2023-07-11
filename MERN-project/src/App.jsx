@@ -133,21 +133,17 @@
       
       // const newIssueList = this.state.issues.slice(); //slice is use to make a COPY of the array
 
-      const query=`mutation{
-        IssueAdd(issue:{
-          title:"${issue.title}",
-          owner:"${issue.owner}",
-          due:"${issue.due.toISOString()}",
-        }){
-          id
+      const query = `mutation issueAdd($issue: IssueInputs!) {
+        issueAdd(issue: $issue) {
+        id
         }
-       }`
+        }`;
       // newIssueList.push(issue);
       // this.setState({ issues: newIssueList });
       const response = await fetch('/graphql', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json'},
-        body: JSON.stringify({ query })
+        body: JSON.stringify({ query ,variables:{issue}})
         });
         this.loadData();
     }

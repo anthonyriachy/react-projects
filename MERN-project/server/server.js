@@ -66,6 +66,7 @@ async function issueList() {
   const issues = await db.collection('issues').find({}).toArray();
   return issues;
 }
+
 function issueAdd(_, { issue }) {
   //we can ignore the first argument and use a destructuring assignment to access the issue object, which is the input
   issue.created = new Date();
@@ -83,6 +84,11 @@ async function connectToDb() {
     db = client.db();
 } 
 
+
+const app = express();
+
+
+
 const server = new ApolloServer({
   typeDefs: fs.readFileSync("./server/schema.graphql", "utf-8"), //to read the file will transform it into a string also
   resolvers,
@@ -99,22 +105,22 @@ const server = new ApolloServer({
     }catch(err){
         console.log('ERROR',err);
     }
-})();
-
-const app = express();
-
-server.applyMiddleware({ app, path: "/graphql" });
-
-
-
+}());
 // Now, we have to change the setup of the server to first connect to the database and then start the 
 // Express application. Since connectToDb() is an async function, we can use await to wait for it to finish, then 
 // call app.listen(). But since await cannot be used in the main section of the program, we have to enclose it 
 // within an async function and execute that function immediately
 
+server.applyMiddleware({ app, path: "/graphql" });
+
+
+
+
 
 
 app.use("/", express.static("public"));
+
+
 
 //shape and function that we will use to change data
 //these can be in diff files

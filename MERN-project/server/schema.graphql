@@ -1,0 +1,39 @@
+#here we define this in our server
+#scalar is used instead of type to define a scalar tyle to use like String Int
+
+scalar GraphQLDate
+
+type Issue{
+    _id:ID!
+    id:Int!
+    status:String!
+    owner:String
+    effort:Int
+    created:GraphQLDate!
+    due:GraphQLDate
+    title:String!
+}
+
+input IssueInput{ #declaring input type
+    title:String!
+    "optional if not supplied, willbe set to 'new'"
+    status:String
+    owner:String
+    effort:Int
+    due:GraphQLDate
+
+}
+
+type Query {
+    about: String!          #function that return about message
+    issueList:[Issue!]!
+
+
+    #getAllUsers:[User!]!    #to return a list of users user! means one user
+}
+type Mutation {
+    setAboutMessage(message: String!): String!
+    issueAdd(issue:IssueInput!):Issue! 
+
+    #CreateUser(name:String! ,age :Int! , married: Boolean!):User!
+}

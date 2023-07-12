@@ -1,20 +1,20 @@
-let users=[
-    {
-        name:"anthony",
-        age:20,
-        married:false
-    },
-    {
-        name:"joud",
-        age:20,
-        married:false
-    },
-    {
-        name:"pedro",
-        age:35,
-        married:true
-    },
-]
+// let users=[
+//     {
+//         name:"anthony",
+//         age:20,
+//         married:false
+//     },
+//     {
+//         name:"joud",
+//         age:20,
+//         married:false
+//     },
+//     {
+//         name:"pedro",
+//         age:35,
+//         married:true
+//     },
+// ]
 
 let issuesDB = [
     {

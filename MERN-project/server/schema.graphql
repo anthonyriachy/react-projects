@@ -14,9 +14,9 @@ type Issue{
     title:String!
 }
 
-input IssueInput{ #declaring input type
+input IssueInputs{ #declaring input type
     title:String!
-    "optional if not supplied, willbe set to 'new'"
+    
     status:String
     owner:String
     effort:Int
@@ -33,7 +33,7 @@ type Query {
 }
 type Mutation {
     setAboutMessage(message: String!): String!
-    issueAdd(issue:IssueInput!):Issue! 
+    issueAdd(issue:IssueInputs!):Issue! 
 
     #CreateUser(name:String! ,age :Int! , married: Boolean!):User!
 }

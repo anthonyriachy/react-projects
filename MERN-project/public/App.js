@@ -1,38 +1,54 @@
-const initialIssues = [{
-  id: 1,
-  status: "New",
-  owner: "Ravan",
-  effort: 5,
-  created: new Date("2018-08-15"),
-  due: undefined,
-  title: "Error in console when clicking Add"
-}, {
-  id: 2,
-  status: "Assigned",
-  owner: "Eddie",
-  effort: 14,
-  created: new Date("2018-08-16"),
-  due: new Date("2018-08-30"),
-  title: "Missing bottom border on panel"
-}];
 // const sampleIssue = {
 //   status: "New",
 //   owner: "Pieta",
 //   title: "Completion date should be optional",
 // };
 
+const dateRegex = new RegExp("^\\d\\d\\d\\d-\\d\\d-\\d\\d");
+function jsonDateReviver(key, value) {
+  if (dateRegex.test(value)) return new Date(value);
+  return value;
+}
+async function graphQLFetch(query, variables = {}) {
+  try {
+    const response = await fetch("/graphql", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        query,
+        variables
+      })
+    });
+    const body = await response.text();
+    const result = JSON.parse(body, jsonDateReviver);
+    if (result.errors) {
+      const error = result.errors[0];
+      if (error.extensions.code == "BAD_USER_INPUT") {
+        const details = error.extensions.exception.errors.join("\n ");
+        alert(`${error.message}:\n ${details}`);
+      } else {
+        alert(`${error.extensions.code}: ${error.message}`);
+      }
+    }
+    return result.data;
+  } catch (e) {
+    alert(`Error in sending data to server: ${e.message}`);
+  }
+}
 class IssueAdd extends React.Component {
   constructor() {
     super();
     this.handleSubmit = this.handleSubmit.bind(this);
   }
   handleSubmit(e) {
-    e.preventDefault(); //to stop it from submitting it 
+    e.preventDefault(); //to stop it from submitting it
     const form = document.forms.addForm;
     const issue = {
       owner: form.owner.value,
       title: form.title.value,
-      status: 'new'
+      due: new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 10)
     };
     this.props.createIssue(issue);
     form.owner.value = ""; //rest the input field
@@ -60,7 +76,7 @@ class IssueFilter extends React.Component {
   }
 }
 function IssueRow(props) {
-  return /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", null, props.issue.id), /*#__PURE__*/React.createElement("td", null, props.issue.status), /*#__PURE__*/React.createElement("td", null, props.issue.owner), /*#__PURE__*/React.createElement("td", null, props.issue.created.toDateString()), /*#__PURE__*/React.createElement("td", null, props.issue.effort), /*#__PURE__*/React.createElement("td", null, props.issue.due ? props.issue.due.toDateString() : ""), /*#__PURE__*/React.createElement("td", null, props.issue.title));
+  return /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", null, props.issue.id), /*#__PURE__*/React.createElement("td", null, props.issue.status), /*#__PURE__*/React.createElement("td", null, props.issue.owner), /*#__PURE__*/React.createElement("td", null, props.issue.created.toDateString()), /*#__PURE__*/React.createElement("td", null, props.issue.effort), /*#__PURE__*/React.createElement("td", null, props.issue.due ? props.issue.due.toDateString() : ' '), /*#__PURE__*/React.createElement("td", null, props.issue.title));
 }
 function IssueTable(props) {
   const issueRows = props.issues.map(issue => /*#__PURE__*/React.createElement(IssueRow, {
@@ -80,26 +96,69 @@ class App extends React.Component {
     this.createIssue = this.createIssue.bind(this); //!!!!!!!!!!111 this  is very important it won't work without it
   }
 
-  loadData() {
-    setTimeout(() => {
+  async loadData() {
+    //   //check 123 very important
+    const query = `query {
+        issueList {
+        _id id title status owner
+        created effort due
+        }
+        }`;
+
+    // const response = await fetch("/graphql", {
+    //   //end point
+    //   method: "POST", //post method
+    //   headers: { "Content-Type": "application/json" },
+    //   body: JSON.stringify({ query }),
+    // });
+    // //const result=await response.json();
+    // const body = await response.text();
+    // const result = JSON.parse(body, jsonDateReviver); //JSON.parse convert a string tp a js object
+
+    // this.setState({ issues: result.data.Issuelist });
+    const data = await graphQLFetch(query);
+    if (data) {
       this.setState({
-        issues: initialIssues
+        issues: data.issueList
       });
-    }, 500);
+    }
   }
   componentDidMount() {
     // see if the ui is loaded
     this.loadData(); //if yes load the data
   }
 
-  createIssue(issue) {
-    issue.id = this.state.issues.length + 1;
-    issue.created = new Date();
-    const newIssueList = this.state.issues.slice(); //slice is use to make a COPY of the array
-    newIssueList.push(issue);
-    this.setState({
-      issues: newIssueList
+  async createIssue(issue) {
+    // issue.id = this.state.issues.length + 1;
+    // issue.created = new Date();
+
+    // const newIssueList = this.state.issues.slice(); //slice is use to make a COPY of the array
+    // newIssueList.push(issue);
+    // this.setState({ issues: newIssueList });
+    // const query = `mutation issueAdd($issue: IssueInputs!) {
+    //   issueAdd(issue: $issue) {
+    //   id
+    //   }
+    //   }`;
+
+    const query = `mutation issueAdd($issue: IssueInputs!) {
+        issueAdd(issue: $issue) {
+        id
+        }
+        }`;
+
+    // const response = await fetch("/graphql", {
+    //   method: "POST",
+    //   headers: { "Content-Type": "application/json" },
+    //   body: JSON.stringify({ query, variables: { issue } }),
+    // });
+    // this.loadData();
+    const data = await graphQLFetch(query, {
+      issue
     });
+    if (data) {
+      this.loadData();
+    }
   }
   render() {
     return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("h1", null, "Issue Tracker"), /*#__PURE__*/React.createElement(IssueFilter, null), /*#__PURE__*/React.createElement("hr", null), /*#__PURE__*/React.createElement(IssueTable, {

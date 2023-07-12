@@ -4,10 +4,37 @@
 //   title: "Completion date should be optional",
 // };
 
+
+
+
 const dateRegex = new RegExp("^\\d\\d\\d\\d-\\d\\d-\\d\\d");
 function jsonDateReviver(key, value) {
   if (dateRegex.test(value)) return new Date(value);
   return value;
+}
+
+async function graphQLFetch(query, variables = {}) {
+  try {
+    const response = await fetch("/graphql", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query, variables }),
+    });
+    const body = await response.text();
+    const result = JSON.parse(body, jsonDateReviver);
+    if (result.errors) {
+      const error = result.errors[0];
+      if (error.extensions.code == "BAD_USER_INPUT") {
+        const details = error.extensions.exception.errors.join("\n ");
+        alert(`${error.message}:\n ${details}`);
+      } else {
+        alert(`${error.extensions.code}: ${error.message}`);
+      }
+    }
+    return result.data;
+  } catch (e) {
+    alert(`Error in sending data to server: ${e.message}`);
+  }
 }
 
 class IssueAdd extends React.Component {
@@ -56,7 +83,7 @@ function IssueRow(props) {
       <td>{props.issue.owner}</td>
       <td>{props.issue.created.toDateString()}</td>
       <td>{props.issue.effort}</td>
-      <td>{issue.due ? issue.due.toDateString() : " "}</td>
+      <td>{props.issue.due ? props.issue.due.toDateString() : ' '}</td>
       <td>{props.issue.title}</td>
     </tr>
   );
@@ -100,18 +127,23 @@ class App extends React.Component {
         }
         }`;
 
-    const response = await fetch("/graphql", {
-      //end point
-      method: "POST", //post method
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query }),
-    });
-    //const result=await response.json();
-    const body = await response.text();
-    const result = JSON.parse(body, jsonDateReviver); //JSON.parse convert a string tp a js object
+    // const response = await fetch("/graphql", {
+    //   //end point
+    //   method: "POST", //post method
+    //   headers: { "Content-Type": "application/json" },
+    //   body: JSON.stringify({ query }),
+    // });
+    // //const result=await response.json();
+    // const body = await response.text();
+    // const result = JSON.parse(body, jsonDateReviver); //JSON.parse convert a string tp a js object
 
-    this.setState({ issues: result.data.issueList });
+    // this.setState({ issues: result.data.Issuelist });
+    const data = await graphQLFetch(query);
+    if (data) {
+      this.setState({ issues: data.issueList });
+    }
   }
+
   componentDidMount() {
     // see if the ui is loaded
     this.loadData(); //if yes load the data
@@ -136,12 +168,16 @@ class App extends React.Component {
         }
         }`;
 
-    const response = await fetch("/graphql", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query, variables: { issue } }),
-    });
-    this.loadData();
+    // const response = await fetch("/graphql", {
+    //   method: "POST",
+    //   headers: { "Content-Type": "application/json" },
+    //   body: JSON.stringify({ query, variables: { issue } }),
+    // });
+    // this.loadData();
+    const data = await graphQLFetch(query, { issue });
+    if (data) {
+      this.loadData();
+    }
   }
 
   render() {

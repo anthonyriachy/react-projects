@@ -3,10 +3,19 @@
 
 scalar GraphQLDate
 
+enum StatusType {
+ New
+ Assigned
+ Fixed
+ Closed
+}
+
+
+
 type Issue{
     _id:ID!
     id:Int!
-    status:String!
+    status:StatusType!
     owner:String
     effort:Int
     created:GraphQLDate!
@@ -14,10 +23,10 @@ type Issue{
     title:String!
 }
 
-input IssueInputs{ #declaring input type
-    title:String!
-    
-    status:String
+#declaring input type
+input IssueInputs{ 
+    title:String!    
+    status:StatusType=New
     owner:String
     effort:Int
     due:GraphQLDate

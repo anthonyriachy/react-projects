@@ -1,7 +1,7 @@
 //const { issuesDB } = require("../fakeData/data");
 
 const fs = require("fs"); // it used then to read the file
-
+require('dotenv').config()
 const { GraphQLScalarType } = require("graphql"); // to set the graphqldate type
 const express = require("express");
 const { Kind } = require("graphql/language");
@@ -12,7 +12,8 @@ const { MongoClient } = require('mongodb');
 
 const { errorMonitor } = require("events");
 
-const url = 'mongodb://localhost/Issuetracker';
+const url = process.env.DB_URL || 'mongodb://localhost/Issuetracker';
+const port = process.env.API_SERVER_PORT || 3000;
 
 let db;
 
@@ -132,8 +133,8 @@ const server = new ApolloServer({
 
   try{
       await connectToDb();
-      app.listen(3000, function () {
-      console.log("API server listening of port 3000")});
+      app.listen(port, function () {
+      console.log(`API server listening of port ${port}`)});
   }catch(err){
       console.log('ERROR',err);
   }

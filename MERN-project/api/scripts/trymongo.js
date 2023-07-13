@@ -1,7 +1,7 @@
 const { MongoClient } = require("mongodb");
 //connecting to the server
 
-const url = "mongodb://localhost/Issuetracker"; //check page 171 for these
+const url = process.env.DB_URL || "mongodb://localhost/Issuetracker"; //check page 171 for these
 
 function testWithCallbacks(callback) {
   console.log("\n--- testWithCallbacks ---");
@@ -11,7 +11,7 @@ function testWithCallbacks(callback) {
       callback(err);
       return;
     }
-    console.log("Connected to MongoDB");
+    console.log("Connected to MongoDB URL", url);
     const db = client.db();
     const collection = db.collection("employees");
     const employee = { id: 1, name: "A. Callback", age: 23 };
@@ -36,28 +36,25 @@ function testWithCallbacks(callback) {
   });
 }
 
-
 async function testWithAsync() {
-    console.log('\n--- testWithAsync ---');
-    const client = new MongoClient(url, { useNewUrlParser: true });
-    try {
+  console.log("\n--- testWithAsync ---");
+  const client = new MongoClient(url, { useNewUrlParser: true });
+  try {
     await client.connect();
-    console.log('Connected to MongoDB');
+    console.log("Connected to MongoDB URL", url);
     const db = client.db();
-    const collection = db.collection('employees');
-    const employee = { id: 2, name: 'B. Async', age: 16 };
+    const collection = db.collection("employees");
+    const employee = { id: 2, name: "B. Async", age: 16 };
     const result = await collection.insertOne(employee);
-    console.log('Result of insert:\n', result.insertedId);
-    const docs = await collection.find({ _id: result.insertedId })
-    .toArray();
-    console.log('Result of find:\n', docs);
-    } catch(err) {
+    console.log("Result of insert:\n", result.insertedId);
+    const docs = await collection.find({ _id: result.insertedId }).toArray();
+    console.log("Result of find:\n", docs);
+  } catch (err) {
     console.log(err);
-    } finally {
+  } finally {
     client.close();
-    }
-   }
-
+  }
+}
 
 testWithCallbacks(function (err) {
   if (err) {

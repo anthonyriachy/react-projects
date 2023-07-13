@@ -1,13 +1,20 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable linebreak-style */
+/* eslint-disable no-undef */
+/* eslint-disable linebreak-style */
+
 // const sampleIssue = {
 //   status: "New",
 //   owner: "Pieta",
 //   title: "Completion date should be optional",
 // };
 
+/* eslint "react/react-in-jsx-scope": "off" */
+/* globals React ReactDOM */
+/* eslint "react/jsx-no-undef": "off" */
+/* eslint "react/no-multi-comp": "off" */
 
-
-
-const dateRegex = new RegExp("^\\d\\d\\d\\d-\\d\\d-\\d\\d");
+const dateRegex = new RegExp('^\\d\\d\\d\\d-\\d\\d-\\d\\d');
 function jsonDateReviver(key, value) {
   if (dateRegex.test(value)) return new Date(value);
   return value;
@@ -16,16 +23,16 @@ function jsonDateReviver(key, value) {
 async function graphQLFetch(query, variables = {}) {
   try {
     const response = await fetch(window.ENV.UI_API_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query, variables }),
     });
     const body = await response.text();
     const result = JSON.parse(body, jsonDateReviver);
     if (result.errors) {
       const error = result.errors[0];
-      if (error.extensions.code == "BAD_USER_INPUT") {
-        const details = error.extensions.exception.errors.join("\n ");
+      if (error.extensions.code === 'BAD_USER_INPUT') {
+        const details = error.extensions.exception.errors.join('\n ');
         alert(`${error.message}:\n ${details}`);
       } else {
         alert(`${error.extensions.code}: ${error.message}`);
@@ -34,6 +41,7 @@ async function graphQLFetch(query, variables = {}) {
     return result.data;
   } catch (e) {
     alert(`Error in sending data to server: ${e.message}`);
+    return null
   }
 }
 
@@ -44,7 +52,7 @@ class IssueAdd extends React.Component {
   }
 
   handleSubmit(e) {
-    e.preventDefault(); //to stop it from submitting it
+    e.preventDefault(); // to stop it from submitting it
     const form = document.forms.addForm;
 
     const issue = {
@@ -52,9 +60,11 @@ class IssueAdd extends React.Component {
       title: form.title.value,
       due: new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 10),
     };
-    this.props.createIssue(issue);
-    form.owner.value = ""; //rest the input field
-    form.title.value = "";
+    
+    const { createIssue } = this.props;
+    createIssue(issue);
+    form.owner.value = ''; // rest the input field
+    form.title.value = '';
   }
 
   render() {
@@ -63,34 +73,34 @@ class IssueAdd extends React.Component {
         {/* handleSubmit expects a event object (e) */}
         <input type="text" name="owner" placeholder="Owner" />
         <input type="text" name="title" placeholder="Title" />
-        <button>Add</button>
+        <button type="submit">Add</button>
       </form>
     );
   }
 }
-
+// eslint-disable-next-line react/prefer-stateless-function
 class IssueFilter extends React.Component {
   render() {
     return <div>IssueFilter</div>;
   }
 }
 
-function IssueRow(props) {
+function IssueRow({ issue }) {
   return (
     <tr>
-      <td>{props.issue.id}</td>
-      <td>{props.issue.status}</td>
-      <td>{props.issue.owner}</td>
-      <td>{props.issue.created.toDateString()}</td>
-      <td>{props.issue.effort}</td>
-      <td>{props.issue.due ? props.issue.due.toDateString() : ' '}</td>
-      <td>{props.issue.title}</td>
+      <td>{issue.id}</td>
+      <td>{issue.status}</td>
+      <td>{issue.owner}</td>
+      <td>{issue.created.toDateString()}</td>
+      <td>{issue.effort}</td>
+      <td>{issue.due ? props.issue.due.toDateString() : ' '}</td>
+      <td>{issue.title}</td>
     </tr>
   );
 }
 
-function IssueTable(props) {
-  const issueRows = props.issues.map((issue) => (
+function IssueTable({ issue }) {
+  const issueRows = issues.map(issue => (
     <IssueRow key={issue.id} issue={issue} />
   ));
   return (
@@ -116,8 +126,9 @@ class App extends React.Component {
     super();
 
     this.state = { issues: [] };
-    this.createIssue = this.createIssue.bind(this); //!!!!!!!!!!111 this  is very important it won't work without it
+    this.createIssue = this.createIssue.bind(this); //! !!!!!!!!!111 this  is very important it won't work without it
   }
+
   async loadData() {
     //   //check 123 very important
     const query = `query {
@@ -127,7 +138,7 @@ class App extends React.Component {
         }
         }`;
 
-    
+
     const data = await graphQLFetch(query);
     if (data) {
       this.setState({ issues: data.issueList });
@@ -136,11 +147,10 @@ class App extends React.Component {
 
   componentDidMount() {
     // see if the ui is loaded
-    this.loadData(); //if yes load the data
+    this.loadData(); // if yes load the data
   }
 
   async createIssue(issue) {
-    
     const query = `mutation issueAdd($issue: IssueInputs!) {
         issueAdd(issue: $issue) {
         id
@@ -155,16 +165,19 @@ class App extends React.Component {
 
   render() {
     return (
+      const { issues } =this.state;
       <React.Fragment>
         <h1>Issue Tracker</h1>
         <IssueFilter />
         <hr />
-        <IssueTable issues={this.state.issues} />
+        <IssueTable issues={issues} />
         <hr />
-        <IssueAdd createIssue={this.createIssue} /> {/* Add createIssue prop */}
+        <IssueAdd createIssue={this.createIssue} />
+        {' '}
+        {/* Add createIssue prop */}
       </React.Fragment>
     );
   }
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);

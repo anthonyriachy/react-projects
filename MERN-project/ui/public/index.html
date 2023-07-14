@@ -4,11 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>React App</title>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/whatwg-fetch@3.0.0/dist/fetch.umd.js"></script>
-    <script src="https://unpkg.com/@babel/polyfill@7/dist/polyfill.min.js"></script>
-    <script src="https://unpkg.com/prop-types@15/prop-types.js"></script>
     <!-- for older version to support to use ajax to fetch from api ? -->
     <style>
       table.bordered-table th, td {border: 1px solid silver; padding: 4px;}
@@ -20,6 +15,7 @@
   <body>
     <div id="root"></div>
     <script src="/env.js"></script>
+    <script src="/vendor.bundle.js"></script>
     <script type="module" src="/app.bundle.js" ></script>
     <!-- app.bundle because of webapack -->
   </body>

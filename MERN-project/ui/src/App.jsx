@@ -1,8 +1,10 @@
-/* eslint-disable no-unused-vars */
 /* eslint-disable linebreak-style */
+/* eslint-disable react/sort-comp */
+/* eslint-disable max-len */
+/* eslint-disable no-shadow */
 /* eslint-disable no-undef */
-/* eslint-disable linebreak-style */
 
+/* eslint-disable import/no-unresolved */
 // const sampleIssue = {
 //   status: "New",
 //   owner: "Pieta",
@@ -12,38 +14,11 @@
 /* eslint "react/react-in-jsx-scope": "off" */
 /* globals React ReactDOM */
 /* eslint "react/jsx-no-undef": "off" */
-/* eslint "react/no-multi-comp": "off" */
 
-const dateRegex = new RegExp('^\\d\\d\\d\\d-\\d\\d-\\d\\d');
-function jsonDateReviver(key, value) {
-  if (dateRegex.test(value)) return new Date(value);
-  return value;
-}
+/* globals React ReactDOM PropTypes */
+// for prototypes
 
-async function graphQLFetch(query, variables = {}) {
-  try {
-    const response = await fetch(window.ENV.UI_API_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, variables }),
-    });
-    const body = await response.text();
-    const result = JSON.parse(body, jsonDateReviver);
-    if (result.errors) {
-      const error = result.errors[0];
-      if (error.extensions.code === 'BAD_USER_INPUT') {
-        const details = error.extensions.exception.errors.join('\n ');
-        alert(`${error.message}:\n ${details}`);
-      } else {
-        alert(`${error.extensions.code}: ${error.message}`);
-      }
-    }
-    return result.data;
-  } catch (e) {
-    alert(`Error in sending data to server: ${e.message}`);
-    return null
-  }
-}
+import graphQLFetch from './graphQLFetch.js';
 
 class IssueAdd extends React.Component {
   constructor() {
@@ -60,7 +35,7 @@ class IssueAdd extends React.Component {
       title: form.title.value,
       due: new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 10),
     };
-    
+
     const { createIssue } = this.props;
     createIssue(issue);
     form.owner.value = ''; // rest the input field
@@ -78,6 +53,11 @@ class IssueAdd extends React.Component {
     );
   }
 }
+
+IssueAdd.propTypes = {
+  createIssue: PropTypes.func.isRequired,
+};
+
 // eslint-disable-next-line react/prefer-stateless-function
 class IssueFilter extends React.Component {
   render() {
@@ -85,7 +65,8 @@ class IssueFilter extends React.Component {
   }
 }
 
-function IssueRow({ issue }) {
+function IssueRow(props) {
+  const { issue } = props;
   return (
     <tr>
       <td>{issue.id}</td>
@@ -93,13 +74,13 @@ function IssueRow({ issue }) {
       <td>{issue.owner}</td>
       <td>{issue.created.toDateString()}</td>
       <td>{issue.effort}</td>
-      <td>{issue.due ? props.issue.due.toDateString() : ' '}</td>
+      <td>{issue.due ? issue.due.toDateString() : ' '}</td>
       <td>{issue.title}</td>
     </tr>
   );
 }
 
-function IssueTable({ issue }) {
+function IssueTable({ issues }) {
   const issueRows = issues.map(issue => (
     <IssueRow key={issue.id} issue={issue} />
   ));
@@ -164,8 +145,8 @@ class App extends React.Component {
   }
 
   render() {
+    const { issues } = this.state;
     return (
-      const { issues } =this.state;
       <React.Fragment>
         <h1>Issue Tracker</h1>
         <IssueFilter />
@@ -173,11 +154,10 @@ class App extends React.Component {
         <IssueTable issues={issues} />
         <hr />
         <IssueAdd createIssue={this.createIssue} />
-        {' '}
         {/* Add createIssue prop */}
       </React.Fragment>
     );
   }
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+ReactDOM.render(<App />, document.getElementById('root'));

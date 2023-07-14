@@ -91,8 +91,8 @@ var IssueFilter = /*#__PURE__*/function (_React$Component2) {
   return IssueFilter;
 }(React.Component);
 function IssueRow(props) {
-  var issue = props.issue;
-  return /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", null, issue.id), /*#__PURE__*/React.createElement("td", null, issue.status), /*#__PURE__*/React.createElement("td", null, issue.owner), /*#__PURE__*/React.createElement("td", null, issue.created.toDateString()), /*#__PURE__*/React.createElement("td", null, issue.effort), /*#__PURE__*/React.createElement("td", null, issue.due ? issue.due.toDateString() : ' '), /*#__PURE__*/React.createElement("td", null, issue.title));
+  console.log(props.issue + " issuelog");
+  return /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", null, props.issue.id), /*#__PURE__*/React.createElement("td", null, props.issue.status), /*#__PURE__*/React.createElement("td", null, props.issue.owner), /*#__PURE__*/React.createElement("td", null, props.issue.created.toDateString()), /*#__PURE__*/React.createElement("td", null, props.issue.effort), /*#__PURE__*/React.createElement("td", null, props.issue.due ? props.issue.due.toDateString() : ' '), /*#__PURE__*/React.createElement("td", null, props.issue.title));
 }
 function IssueTable(_ref) {
   var issues = _ref.issues;

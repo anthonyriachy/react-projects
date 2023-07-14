@@ -66,16 +66,16 @@ class IssueFilter extends React.Component {
 }
 
 function IssueRow(props) {
-  const { issue } = props;
+  console.log(props.issue+" issuelog")
   return (
     <tr>
-      <td>{issue.id}</td>
-      <td>{issue.status}</td>
-      <td>{issue.owner}</td>
-      <td>{issue.created.toDateString()}</td>
-      <td>{issue.effort}</td>
-      <td>{issue.due ? issue.due.toDateString() : ' '}</td>
-      <td>{issue.title}</td>
+      <td>{props.issue.id}</td>
+      <td>{props.issue.status}</td>
+      <td>{props.issue.owner}</td>
+      <td>{props.issue.created.toDateString()}</td>
+      <td>{props.issue.effort}</td>
+      <td>{props.issue.due ? props.issue.due.toDateString() : ' '}</td>
+      <td>{props.issue.title}</td>
     </tr>
   );
 }

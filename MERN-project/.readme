@@ -1,2 +1,6 @@
 in package.json in start in nodemon we add the option -e js,graphql so that the nodemon 
  look for changes not only in files with .js but also with .graphql files
+
+ commands:
+ this one is needed for webpack:
+    npx webpack public/App.js --output public/app.bundle.js --mode development

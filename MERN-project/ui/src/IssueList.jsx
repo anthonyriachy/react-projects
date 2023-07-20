@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable linebreak-style */
 /* eslint-disable no-trailing-spaces */
 /* eslint-disable import/no-unresolved */
@@ -6,6 +7,7 @@
 /* eslint "react/jsx-no-undef": "off" */
 
 import React from 'react';
+import URLSearchParams from 'url-search-params';
 import IssueFilter from './IssueFilter.jsx';
 import IssueTable from './IssueTable.jsx';
 import IssueAdd from './IssueAdd.jsx';
@@ -20,16 +22,28 @@ export default class IssueList extends React.Component {
     //! !!!!!!!!!111 this  is very important it won't work without it
   }
 
+  componentDidUpdate(prevProps) {
+    const { location: { search: prevSearch } } = prevProps;
+    const { location: { search } } = this.props;
+    if (prevSearch !== search) {
+      this.loadData();
+    }
+  }
+
   async loadData() {
     //   //check 123 very important
-    const query = `query {
-          issueList {
-          _id id title status owner
-          created effort due
-          }
-        }`;
+    const { location: { search } } = this.props;
+    const params = new URLSearchParams(search);
+    const vars = {};
+    if (params.get('status')) vars.status = params.get('status');
+    const query = `query issueList($status: StatusType) {
+    issueList (status: $status) {
+    id title status owner
+    created effort due
+    }
+    }`;
 
-    const data = await graphQLFetch(query);
+    const data = await graphQLFetch(query, vars);
     if (data) {
       this.setState({ issues: data.issueList });
     }

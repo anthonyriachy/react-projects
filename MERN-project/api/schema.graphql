@@ -35,7 +35,7 @@ input IssueInputs{
 
 type Query {
     about: String!          #function that return about message
-    issueList:[Issue!]!
+    issueList(status :StatusType):[Issue!]!
 
 
     #getAllUsers:[User!]!    #to return a list of users user! means one user

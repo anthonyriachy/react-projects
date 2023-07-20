@@ -2,7 +2,7 @@
 /* eslint-disable react/destructuring-assignment */
 // eslint-disable-next-line import/no-extraneous-dependencies
 import React from 'react';
-
+import { Link } from 'react-router-dom';
 function IssueRow(props) {
   return (
     <tr>
@@ -13,6 +13,7 @@ function IssueRow(props) {
       <td>{props.issue.effort}</td>
       <td>{props.issue.due ? props.issue.due.toDateString() : ' '}</td>
       <td>{props.issue.title}</td>
+      <td><Link to={`/edit/${props.issue.id}`}>Edit</Link></td>
     </tr>
   );
 }
@@ -32,6 +33,7 @@ export default function IssueTable({ issues }) {
           <th>Effort</th>
           <th>Due Date</th>
           <th>Title</th>
+          <th>Action</th>
         </tr>
       </thead>
       <tbody>{issueRows}</tbody>

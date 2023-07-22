@@ -1,53 +1,45 @@
 /* eslint-disable prettier/prettier */
-/* eslint-disable @typescript-eslint/no-shadow */
 /* eslint-disable react-native/no-inline-styles */
-import React from 'react';
-import {useState} from 'react';
-import {View, Text} from 'react-native';
-import QRCodeScanner from 'react-native-qrcode-scanner';
+import React, { useState } from 'react';
+import { View, Button, Text } from 'react-native';
+import validateQRCodeAPI from './API';
+import { RNCamera } from 'react-native-camera';
 
-export default function Scanner() {
-  const [data, SetData] = useState('scan the items QR code');
-  const [verificationResult,SetVerificationResult] = useState(null);
 
-  async function onQRCodeScanned(d:{data:string}){
-    SetData(d.data);
+function QRCodeScanner(): JSX.Element{
+  const [scannedData, setScannedData] = useState<string>('');
+  const [validationResult, setValidationResult] = useState<string>('');
+
+
+  const handleBarCodeScanned = ({ data }: { data: string }) => {
+    console.log('scanned QR Code data: ',data)
+    setScannedData(data);
+    validateQRCode(data);
+  };
+
+  const validateQRCode = async (data: string) => {
     try {
-      const response = await fetch(`http://192.168.1.107:3000/verify-qrcode?data=${encodeURIComponent(data)}`);
-      const data = await response.json();
-      SetVerificationResult(data.message);
+      console.log('Sending QR code data:', data);
+      const response = await validateQRCodeAPI(data);
+      setValidationResult(response.isValid ? 'Valid QR code' : 'Invalid QR code');
     } catch (error) {
-      console.error('Error verifying QR code in the database:', error);
+      console.error('Error validating QR code:', error);
     }
-  }
+  };
+
+
+
   return (
-    <QRCodeScanner
-      onRead={onQRCodeScanned}
-      reactivate={true}
-      reactivateTimeout={500}
-      topContent={
-        <View>
-          <Text style={{color:'black' ,backgroundColor:'lightgrey',padding:20,marginBottom:70}}>QRCodeScanner</Text>
-        </View>
-      }
-      showMarker={true}
-      bottomContent={
-        <View>
-          <Text
-            style={{
-              color: 'black',
-              fontSize: 20,
-              backgroundColor: 'grey',
-              padding:20,
-              marginTop:40,
-            }}>
-            {verificationResult !== null && (
-              <Text>{verificationResult ? 'QR Code is valid' : 'QR Code is invalid'}</Text>
-            )}
-            {data}
-          </Text>
-        </View>
-      }
-    />
+    <View style={{ flex: 1 ,backgroundColor:'black'}}>
+      <RNCamera
+        style={{ flex: 1 }}
+        onBarCodeRead={scannedData ? undefined : handleBarCodeScanned}
+        captureAudio={false} // Add this line to disable audio recordin
+      />
+      {scannedData && <Text>Scanned Data: {scannedData}</Text>}
+      <Button title="Scan Again" onPress={() => setScannedData('')} />
+      {validationResult && <Text>{validationResult}</Text>}
+    </View>
   );
 }
+export default QRCodeScanner;

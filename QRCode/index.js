@@ -1,6 +1,8 @@
+/* eslint-disable prettier/prettier */
 /**
  * @format
  */
+// ... your component code here ...
 
 import {AppRegistry} from 'react-native';
 import App from './screens/App';

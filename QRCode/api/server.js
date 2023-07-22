@@ -1,39 +1,39 @@
 /* eslint-disable prettier/prettier */
 const express = require('express');
-const {connectToDb, getDb} = require('./db');
+const bodyParser = require('body-parser');
+const {v4:uuidv4} = require('uuid');
+//const {connectToDb, getDb} = require('./db');
+const {MongoClient} = require('mongodb');
 const cors = require('cors');
 //init app and middleware
 
 const app = express();
 
+
+//middleware
+app.use(bodyParser.json());
+
+//connect to database
 let db;
+const PORT = 3000;
 
-//function to generarte a qr code buffer:
-const qr = require('qrcode');
+const MONGO_URL = 'mongodb://localhost:27017';
+const DB_NAME = 'Issuetracker';
+const COLLECTION_NAME = 'qrcodes';
 
-async function generateQRCode(data){
-  try {
-    return await qr.toDataURL(data,{ errorCorrectionLevel: 'M' });
-  } catch (err){
-    console.error('error generating qr code:',err);
-    throw err;
+
+MongoClient.connect(MONGO_URL, { useUnifiedTopology: true })
+.then((client=>{
+    console.error('Error connecting to MongoDB:');
+    db = client.db(DB_NAME);
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
   }
-}
-
-
-//db connection
-connectToDb(err => {
-  //callback function came from cb
-  if (!err) {
-    app.listen(3000, () => {
-      console.log('app listening on port 3000');
-    }); //now we only listen after a connection has been istablished
-    db = getDb();
-  }
+))
+.catch((err)=>{
+  console.error('error connecting to MongDb:',err);
 });
-
-app.use(express.json()); //this middleware to parse JSON requests
-
 
 //api end points
 app.get('/issues', (req, res) => {
@@ -49,38 +49,58 @@ app.get('/issues', (req, res) => {
     });
 });
 
-app.get('/verify-qrcode',async (req, res)=>{
+app.post('/verify-qrcode', async (req, res) => {
+  const { data } = req.body;
+  console.log('Received QR code data on server:', data);
   try {
-    const data = req.query;
-    const qrCodeExists = await db.collection('qrcodes').findOne({image:data});
-    if (qrCodeExists){
-      res.status(200).json({message:'QR code is in database',qrCodeData:qrCodeExists});
+    const result = await db.collection(COLLECTION_NAME).findOne({ _id: data });
+    console.log('Database query result:', result);
+    if (result) {
+      res.json({ isValid: true });
     } else {
-      res.status(404).json({error:'QR code not found in database'});
+      res.json({ isValid: false });
     }
-  }
-  catch (err){
-    console.error('error verifying QR code:',err);
-    res.status(500).json({error:'an error has occured while checking for qr code'});
+  } catch (err) {
+    console.error('Error validating QR code in MongoDB:', err);
+    res.status(500).json({ error: 'Failed to validate QR code' });
   }
 });
+
+
+// app.post('/verify-qrcode',async (req, res)=>{
+//   const { data } = req.body;
+  //  console.log('Received QR code data on server:', {data});
+
+//   db.collection(COLLECTION_NAME)
+//     .findOne({ data })
+//     .then((result) => {
+//       if (result) {
+//         res.json({ isValid: true });
+//       } else {
+//         res.json({ isValid: false });
+//       }
+//     })
+//     .catch((err) => {
+//       console.error('Error validating QR code in MongoDB:', err);
+//       res.status(500).json({ error: 'Failed to validate QR code' });
+//     });
+// });
+
 
 app.post('/generate-qrcode', async (req, res) => {
   try {
     const {data} = req.body;
-    const qrCodeImage = await generateQRCode(data);
+    const qrCode = `QR_${uuidv4()}`;
 
-    // convert the image data to Base64
-    //const base64Image = qrCodeImage.toString('base64');
+    const qrCodeData = {_id: qrCode,data,timestamp: new Date()};
 
-    // save the Base64 image data to MongoDB
-    const result = await db.collection('qrcodes').insertOne({image: qrCodeImage});
+    const result = await db.collection(COLLECTION_NAME).insertOne(qrCodeData);
     console.log('QR code image saved to MongoDB:', result.insertedId);
 
-    res.status(200).json({dataURL:qrCodeImage});
+    res.json({qrCode});
   } catch (error) {
     console.error('Error saving QR code image to MongoDB:', error);
-    res.status(500).json({error: 'Could not save QR code image'});
+    res.json({error: 'Could not save QR code image'});
   }
 });
 

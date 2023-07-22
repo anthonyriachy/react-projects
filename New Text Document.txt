@@ -1,0 +1,23 @@
+npm install react-native-view-shot react-native-share --save
+
+For Android (Gradle)
+Open the android/app/build.gradle file in your project.
+
+Make sure the following lines are present in the dependencies block:
+
+gradle
+Copy code
+implementation project(':react-native-view-shot')
+Open the android/settings.gradle file in your project.
+
+Make sure the following line is present:
+
+gradle
+Copy code
+include ':react-native-view-shot'
+project(':react-native-view-shot').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-view-shot/android')
+Build your project:
+bash
+Copy code
+react-native run-android
+After following these steps, the library should be properly linked, and the warning should no longer appear. Make sure to rebuild your project after linking to apply the changes.

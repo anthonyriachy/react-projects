@@ -1,64 +1,125 @@
-/* eslint-disable prettier/prettier */
 /* eslint-disable react-native/no-inline-styles */
-/* eslint-disable react/react-in-jsx-scope */
-
-
-import {useEffect, useState} from 'react';
+/* eslint-disable prettier/prettier */
+import React, {useRef, useState} from 'react';
 import {View, TextInput, TouchableOpacity, Text} from 'react-native';
-import QRCode from 'react-native-qrcode-generator';
+import ViewShot from 'react-native-view-shot';
+import QRCode from 'react-native-qrcode-svg';
+import { captureScreen } from 'react-native-view-shot';
+import RNFS from 'react-native-fs';
+import Share from 'react-native-share';
 
-export default function GenerateQrCode(): JSX.Element {
-  const [input, SetInput] = useState('');
-  const [qrValue, SetQrValue] = useState('');
+interface GenerateQrCodeProps {}
 
+const GenerateQrCode: React.FC<GenerateQrCodeProps> = () => {
+  const [input, setInput] = useState<string>('');
+  const [qrValue, setQrValue] = useState<string>('');
+  const viewShotRef = useRef<ViewShot>(null); // Create a new ref for the ViewShot component
 
-// Function to generate the QR code
-const generateQrCode = () => {
-  SetQrValue(input || 'NA');
-};
+  const generateQRCodeAPI = async (data: string) => {
+    try {
+      const response = await fetch(
+        'http://192.168.1.107:3000/generate-qrcode',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({data}),
+        },
+      );
 
-//save function to moggodb
-const saveQrCodeToMongoDB = async()=>{
-  try {
-  const response = await fetch('http://192.168.1.107:3000/generate-qrcode',{
-    method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-    },
-    body:JSON.stringify({data:input}),  
-  });
-  const data = await response.json();
-  SetQrValue(data.dataURL);
-  console.log('QR code image saved to mongoDB:',data.dataURL);
-}
-catch (err){
-  console.error('error saving QR code to mongodb',err);
-}
-};
+      if (!response.ok) {
+        throw new Error('Failed to generate QR code');
+      }
+
+      const responseData = await response.json();
+      return responseData.qrCode; // Extract the QR code value from the response
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      throw error;
+    }
+  };
+
+  const saveQrCodeToMongoDB = async () => {
+    try {
+      const qrCodeValue = await generateQRCodeAPI(input);
+      setQrValue(qrCodeValue); // Set the generated QR code value
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+    }
+  };
+
+  const shareScreenshot = async (imagePath: string) => {
+    try { 
+      const shareOptions = {
+        title: 'Sharing QR Code',
+        url: `file://${imagePath}`,
+        failOnCancel: false,
+      };
+      await Share.open(shareOptions);
+    } catch (error) {
+      console.error('Error sharing screenshot:', error);
+    }
+  };
+
+  const takeScreenshot = async () => {
+    try {
+      // Use optional chaining and nullish coalescing to safely invoke the capture() method
+      const uri = await viewShotRef.current?.capture?.();
+
+      if (uri) {
+        // Save the image to the device's local storage
+        const imagePath = `${RNFS.DocumentDirectoryPath}/qrCodeScreenshot.png`;
+        await RNFS.moveFile(uri, imagePath);
+        shareScreenshot(imagePath);
+      } else {
+        console.warn('Capture method returned undefined');
+      }
+    } catch (error) {
+      console.error('Error capturing screenshot:', error);
+    }
+  };
 
   return (
     <View>
-      <View style={{alignSelf:'center',marginTop:40}}>
-      {qrValue ? (
-          <QRCode value={qrValue} size={300} color="white" backgroundColor="black" />
-        ) : (
-          <Text style={{color:'black'}}>No QR Code generated yet</Text>
-        )}
+      <View style={{alignSelf: 'center', marginTop: 40}}>
+        <ViewShot ref={viewShotRef}>
+          {qrValue ? (
+            <QRCode
+              value={qrValue}
+              size={300}
+              color="white"
+              backgroundColor="black"
+            />
+          ) : (
+            <Text style={{color: 'black'}}>No QR Code generated yet</Text>
+          )}
+        </ViewShot>
       </View>
       <TextInput
         style={{backgroundColor: 'white', color: 'black', marginTop: 40}}
-        onChangeText={SetInput}
+        onChangeText={setInput}
         value={input}
         placeholder="enter text"
         placeholderTextColor={'grey'}
       />
 
       <TouchableOpacity
-        style={{padding: 20, backgroundColor:'black',marginTop:40}}
+        style={{padding: 20, backgroundColor: 'black', marginTop: 40}}
         onPress={saveQrCodeToMongoDB}>
-        <Text style={{textAlign:'center'}}> Generate a Qr Code</Text>
+        <Text style={{textAlign: 'center', color: 'white'}}>
+          Generate a Qr Code
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={{padding: 20, backgroundColor: 'blue', marginTop: 20}}
+        onPress={takeScreenshot}>
+        <Text style={{textAlign: 'center', color: 'white'}}>
+          Take Screenshot & Share
+        </Text>
       </TouchableOpacity>
     </View>
   );
-}
+};
 
+export default GenerateQrCode;

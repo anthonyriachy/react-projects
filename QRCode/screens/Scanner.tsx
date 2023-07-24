@@ -16,7 +16,7 @@
     const [validationResult, setValidationResult] = useState<string>('');
 
     const [selectedImage,setSelectedImage] = useState<string | null>(null);
-    const [extractedData, setExtractedData] = useState<string|null>(null);
+    //const [extractedData, setExtractedData] = useState<string|null>(null);
     useEffect(()=>{
       check(PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE).then((result)=>{
         if (result === RESULTS.DENIED){
@@ -27,10 +27,8 @@
 
 
     const handleBarCodeScanned = ({ data }: BarCodeReadEvent) => {
-      console.log('scanned QR Code data: ',data);
-      if (data){
+        console.log('scanned QR Code data: ',data);
         validateQRCode(data);
-      }
     };
 
     const validateQRCode = async (data: string) => {
@@ -47,7 +45,6 @@
       try {
         const data = await QRreader(imageUri);
         console.log('QR code data:', data);
-        setExtractedData(data);
         return data;
       } catch (error) {
         console.log('Error detecting QR code:', error);
@@ -63,6 +60,7 @@
           setSelectedImage(imageUri);
           const data = await getImageData(imageUri);
           validateQRCode(data);
+          
         } else {
           console.log('Image selection canceled or no assets selected.');
         }

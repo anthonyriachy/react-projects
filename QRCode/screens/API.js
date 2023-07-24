@@ -1,5 +1,4 @@
 /* eslint-disable prettier/prettier */
-// Create a separate API.js file or define this function in the same file where the QRCodeScanner component resides
 
 const validateQRCodeAPI = async data => {
   try {

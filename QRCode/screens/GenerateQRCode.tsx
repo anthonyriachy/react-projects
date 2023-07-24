@@ -1,10 +1,10 @@
-/* eslint-disable react-native/no-inline-styles */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable prettier/prettier */
+/* eslint-disable react-native/no-inline-styles */
 import React, {useRef, useState} from 'react';
 import {View, TextInput, TouchableOpacity, Text} from 'react-native';
 import ViewShot from 'react-native-view-shot';
 import QRCode from 'react-native-qrcode-svg';
-import { captureScreen } from 'react-native-view-shot';
 import RNFS from 'react-native-fs';
 import Share from 'react-native-share';
 
@@ -15,7 +15,7 @@ const GenerateQrCode: React.FC<GenerateQrCodeProps> = () => {
   const [qrValue, setQrValue] = useState<string>('');
   const viewShotRef = useRef<ViewShot>(null); // Create a new ref for the ViewShot component
 
-  const generateQRCodeAPI = async (data: string) => {
+  const generateQRCodeAPI = async (data: string, usertype:string) => {
     try {
       const response = await fetch(
         'http://192.168.1.107:3000/generate-qrcode',
@@ -24,7 +24,7 @@ const GenerateQrCode: React.FC<GenerateQrCodeProps> = () => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({data}),
+          body: JSON.stringify({data,usertype}),
         },
       );
 
@@ -40,9 +40,9 @@ const GenerateQrCode: React.FC<GenerateQrCodeProps> = () => {
     }
   };
 
-  const saveQrCodeToMongoDB = async () => {
+  const saveQrCodeToMongoDB = async (usertype:string) => {
     try {
-      const qrCodeValue = await generateQRCodeAPI(input);
+      const qrCodeValue = await generateQRCodeAPI(input,usertype);
       setQrValue(qrCodeValue); // Set the generated QR code value
     } catch (error) {
       console.error('Error generating QR code:', error);
@@ -50,7 +50,7 @@ const GenerateQrCode: React.FC<GenerateQrCodeProps> = () => {
   };
 
   const shareScreenshot = async (imagePath: string) => {
-    try { 
+    try {
       const shareOptions = {
         title: 'Sharing QR Code',
         url: `file://${imagePath}`,
@@ -64,7 +64,6 @@ const GenerateQrCode: React.FC<GenerateQrCodeProps> = () => {
 
   const takeScreenshot = async () => {
     try {
-      // Use optional chaining and nullish coalescing to safely invoke the capture() method
       const uri = await viewShotRef.current?.capture?.();
 
       if (uri) {
@@ -106,9 +105,16 @@ const GenerateQrCode: React.FC<GenerateQrCodeProps> = () => {
 
       <TouchableOpacity
         style={{padding: 20, backgroundColor: 'black', marginTop: 40}}
-        onPress={saveQrCodeToMongoDB}>
+        onPress={()=>saveQrCodeToMongoDB('seller')}>
         <Text style={{textAlign: 'center', color: 'white'}}>
-          Generate a Qr Code
+          Generate a Qr Code for a offer
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={{padding: 20, backgroundColor: 'black', marginTop: 40}}
+        onPress={()=>saveQrCodeToMongoDB('costumer')}>
+        <Text style={{textAlign: 'center', color: 'white'}}>
+          Generate a Qr Code for one time deal
         </Text>
       </TouchableOpacity>
       <TouchableOpacity

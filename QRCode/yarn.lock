@@ -6240,6 +6240,13 @@ pkg-dir@^4.2.0:
   dependencies:
     find-up "^4.0.0"
 
+pkg-dir@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.npmjs.org/pkg-dir/-/pkg-dir-5.0.0.tgz"
+  integrity sha512-NPE8TDbzl/3YQYY7CSS228s3g2ollTFnc+Qi3tqmqJp9Vg2ovUpixcJEo2HJScN2Ez+kEaal6y70c0ehqJBJeA==
+  dependencies:
+    find-up "^5.0.0"
+
 pngjs@^5.0.0:
   version "5.0.0"
   resolved "https://registry.npmjs.org/pngjs/-/pngjs-5.0.0.tgz"
@@ -6523,10 +6530,30 @@ react-native-fs@^2.20.0:
     base-64 "^0.1.0"
     utf8 "^3.0.0"
 
+react-native-image-picker@^5.6.0:
+  version "5.6.0"
+  resolved "https://registry.npmjs.org/react-native-image-picker/-/react-native-image-picker-5.6.0.tgz"
+  integrity sha512-QHHb0qw3VXDedllrfS6SjxNG1SubnjUjIR2OH1HVbjv/IRVa3v4fI1MHbQaSNXlGopT9kL9jcnh7tbcX1z74Vg==
+
 react-native-permissions@^2.0.2:
   version "2.2.2"
   resolved "https://registry.npmjs.org/react-native-permissions/-/react-native-permissions-2.2.2.tgz"
   integrity sha512-ihf4shQDSX5Oo9ChQXb9kr13mmyyNem5MaEvOpr3dCjhBOBWyEMztXm9/uPK1Qg5PsNpaYLa1KpcPZDCw87LXg==
+
+react-native-permissions@^3.8.4:
+  version "3.8.4"
+  resolved "https://registry.npmjs.org/react-native-permissions/-/react-native-permissions-3.8.4.tgz"
+  integrity sha512-tJq+5eNqu8Y1PpmuSVMjQtW8E7YJbQ0LSbZ1o9KjgF7etgYmBSZeCR138x715vyZUAtwuecV+ybEM9z8dDs76Q==
+  dependencies:
+    picocolors "^1.0.0"
+    pkg-dir "^5.0.0"
+
+react-native-qr-decode-image-camera@^1.1.3:
+  version "1.1.3"
+  resolved "https://registry.npmjs.org/react-native-qr-decode-image-camera/-/react-native-qr-decode-image-camera-1.1.3.tgz"
+  integrity sha512-5b2MJ0HTxu34PdSNgE69xxSeemm2syriWN3GkVs0QPgjM/TffVTTyf+fp7cYKeI/FHHyErN/COHhLrqFReyoyg==
+  dependencies:
+    prop-types "^15.8.1"
 
 react-native-qrcode-scanner@^1.5.5:
   version "1.5.5"
@@ -6900,6 +6927,11 @@ rimraf@~2.6.2:
   integrity sha512-mwqeW5XsA2qAejG46gYdENaxXjx9onRNCfn7L0duuP4hCuTIi/QO7PDK07KJfp1d+izWPrzEJDcSqBa0OZQriA==
   dependencies:
     glob "^7.1.3"
+
+rn-qr-generator@^1.3.1:
+  version "1.3.1"
+  resolved "https://registry.npmjs.org/rn-qr-generator/-/rn-qr-generator-1.3.1.tgz"
+  integrity sha512-lqdKCfHN1PpcIuOyJ1zUg9NR3Mo53zQ0ZEhHuSChf9/1+/kwxY04eU8plGi3nmsmMfvv9RJSsePNSav2LeADlg==
 
 run-parallel@^1.1.9:
   version "1.2.0"

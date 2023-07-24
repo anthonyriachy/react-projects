@@ -52,47 +52,45 @@ app.get('/issues', (req, res) => {
 app.post('/verify-qrcode', async (req, res) => {
   const { data } = req.body;
   console.log('Received QR code data on server:', data);
+  let qrOffer = false;
   try {
-    const result = await db.collection(COLLECTION_NAME).findOne({ _id: data });
+    let result = await db.collection(COLLECTION_NAME).findOne({ _id: data }); //find the qr code
     console.log('Database query result:', result);
+    console.log('Database qrCOde  TYPE:', result.type);
+
     if (result) {
-      res.json({ isValid: true });
+      if (result.type === 'seller'){
+        qrOffer = true;
+      }
+      //await db.collection(COLLECTION_NAME).deleteOne({_id:data}); //remove if one time deal
+      res.json({ isValid: true ,qrCodeData:result.data });
+      result = await db.collection('users').findOne({name:'anthony'}); //find the user
+      if (result){
+        console.log('user name',result);
+        if (qrOffer === false){
+          await db.collection('users').updateOne({name:result.name},{$inc:{points:10}});
+        } else {
+          await db.collection('users').updateOne({name:result.name},{$inc:{points:-10}});
+        }
+      }
     } else {
       res.json({ isValid: false });
     }
+
   } catch (err) {
     console.error('Error validating QR code in MongoDB:', err);
     res.status(500).json({ error: 'Failed to validate QR code' });
   }
 });
 
-
-// app.post('/verify-qrcode',async (req, res)=>{
-//   const { data } = req.body;
-  //  console.log('Received QR code data on server:', {data});
-
-//   db.collection(COLLECTION_NAME)
-//     .findOne({ data })
-//     .then((result) => {
-//       if (result) {
-//         res.json({ isValid: true });
-//       } else {
-//         res.json({ isValid: false });
-//       }
-//     })
-//     .catch((err) => {
-//       console.error('Error validating QR code in MongoDB:', err);
-//       res.status(500).json({ error: 'Failed to validate QR code' });
-//     });
-// });
-
-
 app.post('/generate-qrcode', async (req, res) => {
   try {
     const {data} = req.body;
+    const {usertype} = req.body;
+
     const qrCode = `QR_${uuidv4()}`;
 
-    const qrCodeData = {_id: qrCode,data,timestamp: new Date()};
+    const qrCodeData = {_id: qrCode,data,timestamp: new Date(),type:usertype};
 
     const result = await db.collection(COLLECTION_NAME).insertOne(qrCodeData);
     console.log('QR code image saved to MongoDB:', result.insertedId);
@@ -103,5 +101,6 @@ app.post('/generate-qrcode', async (req, res) => {
     res.json({error: 'Could not save QR code image'});
   }
 });
+
 
 app.use(cors());

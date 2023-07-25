@@ -1,10 +1,11 @@
+/* eslint-disable prettier/prettier */
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import React from 'react';
 import Scanner from './Scanner';
 import GenerateQrCode from './GenerateQRCode';
 import HomeScreen from './HomeScreen';
-import IssueList from './IssueList';
+import QrCodeList from './QrCodeList';
 
 const Stack = createNativeStackNavigator();
 
@@ -15,7 +16,7 @@ function App(): JSX.Element {
         <Stack.Screen name="HomeScreen" component={HomeScreen} />
         <Stack.Screen name="QRScanner" component={Scanner} />
         <Stack.Screen name="QRGenerator" component={GenerateQrCode} />
-        <Stack.Screen name="IssueList" component={IssueList} />
+        <Stack.Screen name="QrCodeList" component={QrCodeList} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -1,12 +1,12 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable prettier/prettier */
 /* eslint-disable react-native/no-inline-styles */
+
 import React, {useRef, useState} from 'react';
 import {View, TextInput, TouchableOpacity, Text} from 'react-native';
-import ViewShot from 'react-native-view-shot';
 import QRCode from 'react-native-qrcode-svg';
 import RNFS from 'react-native-fs';
 import Share from 'react-native-share';
+import ViewShot from 'react-native-view-shot';
 
 interface GenerateQrCodeProps {}
 
@@ -15,7 +15,7 @@ const GenerateQrCode: React.FC<GenerateQrCodeProps> = () => {
   const [qrValue, setQrValue] = useState<string>('');
   const viewShotRef = useRef<ViewShot>(null); // Create a new ref for the ViewShot component
 
-  const generateQRCodeAPI = async (data: string, usertype:string) => {
+  const generateQRCodeAPI = async (data: string, qrtype:string) => {
     try {
       const response = await fetch(
         'http://192.168.1.107:3000/generate-qrcode',
@@ -24,7 +24,7 @@ const GenerateQrCode: React.FC<GenerateQrCodeProps> = () => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({data,usertype}),
+          body: JSON.stringify({data,qrtype}),
         },
       );
 
@@ -40,9 +40,9 @@ const GenerateQrCode: React.FC<GenerateQrCodeProps> = () => {
     }
   };
 
-  const saveQrCodeToMongoDB = async (usertype:string) => {
+  const saveQrCodeToMongoDB = async (qrtype:string) => {
     try {
-      const qrCodeValue = await generateQRCodeAPI(input,usertype);
+      const qrCodeValue = await generateQRCodeAPI(input,qrtype);
       setQrValue(qrCodeValue); // Set the generated QR code value
     } catch (error) {
       console.error('Error generating QR code:', error);

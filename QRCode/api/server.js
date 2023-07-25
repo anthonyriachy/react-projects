@@ -32,20 +32,17 @@ MongoClient.connect(MONGO_URL, {useUnifiedTopology: true})
     console.error('error connecting to MongDb:', err);
   });
 
-
-
-app.get('/qrCodes',(req, res) => {
+app.get('/qrCodes', (req, res) => {
   let codes = [];
   db.collection('qrcodes')
-  .find() //returns a cursor
-  .forEach(element => codes.push(element))
-  .then(() => {
-    res.status(200).json(codes);
-  })
-  .catch(() => {
-    res.status(500).json({error: 'could not fetch documents'});
-  });
-  
+    .find()
+    .forEach(element => codes.push(element))
+    .then(() => {
+      res.status(200).json(codes);
+    })
+    .catch(() => {
+      res.status(500).json({error: 'could not fetch documents'});
+    });
 });
 
 app.post('/verify-qrcode', async (req, res) => {
@@ -61,25 +58,28 @@ app.post('/verify-qrcode', async (req, res) => {
       const currentDate = new Date();
       const timeDifference = currentDate.getTime() - new Date(qrDate);
       const secondsDifference = timeDifference / 1000;
-      if (secondsDifference <= 30) {
-        if (code) {
-          if (code.type === 'seller') {
-            qrOffer = true;
-          } else {
-            await db.collection(COLLECTION_NAME).deleteOne({_id: data}); //remove if one time deal
-          }
-          res.json({isValid: true, qrCodeData: code.data});
-          let user = await db.collection('users').findOne({name: 'anthony'}); //find the user
+      let user = await db.collection('users').findOne({name: 'anthony'}); //find the user
+
+      if (code.type === 'seller') {
+        qrOffer = true;
+      } else {
+        await db.collection(COLLECTION_NAME).deleteOne({_id: data}); //remove if one time deal
+        await db
+          .collection('users')
+          .updateOne({name: user.name}, {$inc: {points: 10}});
+        res.json({isValid: true, qrCodeData: code.data});
+      }
+      if (qrOffer === true) {
+        if (secondsDifference <= 1000) { //offer time
           if (user) {
             console.log('user name', user);
-            console.log('the id before checking if it is scanned',code._id);
+            console.log('the id before checking if it is scanned', code._id);
             if (!user.scanned.includes(code._id)) {
-              if (qrOffer === false) {
-                await db
-                  .collection('users')
-                  .updateOne({name: user.name}, {$inc: {points: 10}});
-              } else {
-                if (user.points >= 10){
+              await db
+                .collection('users')
+                .updateOne({name: user.name}, {$inc: {points: 10}});
+
+              if (user.points >= 10) {
                 await db.collection('users').updateOne(
                   {name: user.name},
                   {
@@ -90,19 +90,20 @@ app.post('/verify-qrcode', async (req, res) => {
               } else {
                 console.log('no points');
               }
-            }
+
+              res.json({isValid: true, qrCodeData: code.data});
             } else {
-              res.json({isValid:false});
+              res.json({isValid: false, qrCodeData: code.data});
               console.log('qr code already scanned');
             }
           }
         } else {
-          res.json({isValid: false});
+          console.log('ma laha2et halak');
+          res.json({isValid: false, qrCodeData: code.data});
         }
-      } else {
-        console.log('ma laha2et halak');
-        res.json({timesUp:true});
       }
+    } else {
+      res.json({isValid: false});
     }
   } catch (err) {
     console.error('Error validating QR code in MongoDB:', err);
@@ -113,7 +114,7 @@ app.post('/verify-qrcode', async (req, res) => {
 app.post('/generate-qrcode', async (req, res) => {
   try {
     const {data} = req.body;
-    const {usertype} = req.body;
+    const {qrtype} = req.body;
 
     const qrCode = `QR_${uuidv4()}`;
 
@@ -121,7 +122,7 @@ app.post('/generate-qrcode', async (req, res) => {
       _id: qrCode,
       data,
       timestamp: new Date(),
-      type: usertype,
+      type: qrtype,
     };
 
     const result = await db.collection(COLLECTION_NAME).insertOne(qrCodeData);

@@ -1,4 +1,4 @@
-// /* eslint-disable prettier/prettier */
+/* eslint-disable prettier/prettier */
 // import RNQRGenerator from 'rn-qr-generator';
 // import { QRreader } from 'react-native-qr-decode-image-camera';
 

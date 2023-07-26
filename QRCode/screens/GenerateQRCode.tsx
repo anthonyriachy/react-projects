@@ -12,7 +12,7 @@ interface GenerateQrCodeProps {}
 
 const GenerateQrCode: React.FC<GenerateQrCodeProps> = () => {
   const [input, setInput] = useState<string>('');
-  const [qrValue, setQrValue] = useState<string>('');
+  const [qrValue,   setQrValue] = useState<string>('');
   const viewShotRef = useRef<ViewShot>(null); // Create a new ref for the ViewShot component
 
   const generateQRCodeAPI = async (data: string, qrtype:string) => {

@@ -2,10 +2,9 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const {v4: uuidv4} = require('uuid');
-//const {connectToDb, getDb} = require('./db');
+
 const {MongoClient} = require('mongodb');
 const cors = require('cors');
-//init app and middleware
 
 const app = express();
 
@@ -32,10 +31,13 @@ MongoClient.connect(MONGO_URL, {useUnifiedTopology: true})
     console.error('error connecting to MongDb:', err);
   });
 
+
+
+
 app.get('/qrCodes', (req, res) => {
   let codes = [];
   db.collection('qrcodes')
-    .find()
+    .find({isDeleted:false})
     .forEach(element => codes.push(element))
     .then(() => {
       res.status(200).json(codes);
@@ -45,12 +47,12 @@ app.get('/qrCodes', (req, res) => {
     });
 });
 
-app.post('/verify-qrcode', async (req, res) => {
+app.post('/validate-qrcode', async (req, res) => {
   const {data} = req.body;
   console.log('Received QR code data on server:', data);
   let qrOffer = false;
   try {
-    const code = await db.collection(COLLECTION_NAME).findOne({_id: data}); //find the qr code
+    const code = await db.collection(COLLECTION_NAME).findOne({_id: data,isDeleted:false,verify:true}); //find the qr codejl
     console.log('Database query result:', code);
 
     if (code) {
@@ -58,45 +60,43 @@ app.post('/verify-qrcode', async (req, res) => {
       const currentDate = new Date();
       const timeDifference = currentDate.getTime() - new Date(qrDate);
       const secondsDifference = timeDifference / 1000;
-      let user = await db.collection('users').findOne({name: 'anthony'}); //find the user
+      let user = await db
+        .collection('users')
+        .findOne({name: 'anthony'})
+        .catch(err => console.log('error while finding the user', err)); //find the user
 
       if (code.type === 'seller') {
         qrOffer = true;
       } else {
-        await db.collection(COLLECTION_NAME).deleteOne({_id: data}); //remove if one time deal
+        await db
+          .collection(COLLECTION_NAME)
+          .updateOne({_id: data}, {$set: {verify:false}}); //remove if one time deal
         await db
           .collection('users')
           .updateOne({name: user.name}, {$inc: {points: 10}});
         res.json({isValid: true, qrCodeData: code.data});
       }
       if (qrOffer === true) {
-        if (secondsDifference <= 1000) { //offer time
-          if (user) {
-            console.log('user name', user);
-            console.log('the id before checking if it is scanned', code._id);
-            if (!user.scanned.includes(code._id)) {
-              await db
-                .collection('users')
-                .updateOne({name: user.name}, {$inc: {points: 10}});
+        if (secondsDifference <= 1000) {//offer time
+          console.log('user name', user);
+          console.log('the id before checking if it is scanned', code._id);
+            await db
+              .collection(COLLECTION_NAME)
+              .updateOne({_id: data}, {$inc: {numberOfScanned: 1 }});
 
-              if (user.points >= 10) {
-                await db.collection('users').updateOne(
-                  {name: user.name},
-                  {
-                    $inc: {points: -10},
-                    $push: {scanned: code._id},
-                  },
-                );
-              } else {
-                console.log('no points');
-              }
-
-              res.json({isValid: true, qrCodeData: code.data});
+            if (user.points >= 10) {
+              await db.collection('users').updateOne(
+                {name: user.name},
+                {
+                  $inc: {points: -10},
+                  $push: {scanned: code._id},
+                },
+              );
             } else {
-              res.json({isValid: false, qrCodeData: code.data});
-              console.log('qr code already scanned');
+              console.log('no points');
             }
-          }
+
+            res.json({isValid: true, qrCodeData: code.data});
         } else {
           console.log('ma laha2et halak');
           res.json({isValid: false, qrCodeData: code.data});
@@ -123,6 +123,7 @@ app.post('/generate-qrcode', async (req, res) => {
       data,
       timestamp: new Date(),
       type: qrtype,
+      isDeleted:false
     };
 
     const result = await db.collection(COLLECTION_NAME).insertOne(qrCodeData);
@@ -134,5 +135,20 @@ app.post('/generate-qrcode', async (req, res) => {
     res.json({error: 'Could not save QR code image'});
   }
 });
+
+app.post('/verify-code',async (req,res)=>{
+  try {
+    const {data} = req.body;
+    console.log('DAT WE WILL UPDATEeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',data);
+    const code = await db.collection(COLLECTION_NAME).updateOne({_id:data},{$set:{isDeleted:true,verify:true}});
+    res.status(200).json({ message: 'Code verified successfully',code });
+
+  } catch (error){
+    console.log('error while verifying code:',error);
+    res.status(500).json({ error: 'Failed to verify code' });
+
+  }
+});
+
 
 app.use(cors());

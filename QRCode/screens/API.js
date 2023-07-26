@@ -3,7 +3,7 @@
 const validateQRCodeAPI = async data => {
   try {
     const response = await fetch(
-      'http://192.168.1.107:3000/verify-qrcode',
+      'http://192.168.1.107:3000/validate-qrcode',
       {
         method: 'POST',
         headers: {

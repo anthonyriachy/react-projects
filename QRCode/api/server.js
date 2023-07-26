@@ -2,10 +2,10 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const {v4: uuidv4} = require('uuid');
-
 const {MongoClient} = require('mongodb');
 const cors = require('cors');
-
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 const app = express();
 
 //middleware
@@ -32,6 +32,48 @@ MongoClient.connect(MONGO_URL, {useUnifiedTopology: true})
   });
 
 
+
+//new users
+app.post('/signUp',async(req,res)=>{
+  try {
+    const {email,password} = req.body;
+    const existingUser = await db.collection('users').findOne({email});
+    if (existingUser){
+      return res.status(400).json({message:'Email already registered'});
+    }
+    const salt = await bcrypt.genSalt(10);//to add complexity to the hashing proccess (it will do it 10 times)
+    const hashedPassword = await bcrypt.hash(password,salt);
+    const newUser = {email,password:hashedPassword};
+    await db.collection('users').insertOne(newUser);
+    res.status(201).json({message:'User register successfully'});
+  } catch (error){
+    res.status(500).json({message:'Failed to register user'});
+  }
+});
+
+app.post('/signIn',async(req,res)=>{
+  try {
+    const {email,password} = req.body; 
+    const user = await db.collection('users').findOne({email});
+    if (!user){
+    return res.status(401).json({message:'Invalid email address'});
+    }
+    console.log('user password',user.password);
+    if (!user.password) {
+      return res.status(401).json({ message: 'User password not found' });
+    }
+
+    //compare the password to the hashed password
+    const isPasswordValid = await bcrypt.compare(password,user.password);
+    if (!isPasswordValid){
+      return res.status(401).json({message:'invalid password'});
+    }
+    const token = jwt.sign({ email: user.email }, 'your-secret-key');
+    res.json({ message: 'Login successful', token });
+  } catch (err){
+    console.log('failed to log in ',err);
+  }
+});
 
 
 app.get('/qrCodes', (req, res) => {
@@ -123,7 +165,7 @@ app.post('/generate-qrcode', async (req, res) => {
       data,
       timestamp: new Date(),
       type: qrtype,
-      isDeleted:false
+      isDeleted:false,
     };
 
     const result = await db.collection(COLLECTION_NAME).insertOne(qrCodeData);
@@ -139,7 +181,6 @@ app.post('/generate-qrcode', async (req, res) => {
 app.post('/verify-code',async (req,res)=>{
   try {
     const {data} = req.body;
-    console.log('DAT WE WILL UPDATEeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',data);
     const code = await db.collection(COLLECTION_NAME).updateOne({_id:data},{$set:{isDeleted:true,verify:true}});
     res.status(200).json({ message: 'Code verified successfully',code });
 

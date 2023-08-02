@@ -3,7 +3,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const {v4: uuidv4} = require('uuid');
 
-const {MongoClient} = require('mongodb');
+const {MongoClient, Int32} = require('mongodb');
 const cors = require('cors');
 
 const app = express();
@@ -50,9 +50,9 @@ app.get('/qrCodes', (req, res) => {
 app.post('/validate-qrcode', async (req, res) => {
   const {data} = req.body;
   console.log('Received QR code data on server:', data);
-  let qrOffer = false;
+
   try {
-    const code = await db.collection(COLLECTION_NAME).findOne({_id: data,isDeleted:false,verify:true}); //find the qr codejl
+    const code = await db.collection(COLLECTION_NAME).findOne({_id: data,isDeleted:false}); //find the qr codejl
     console.log('Database query result:', code);
 
     if (code) {
@@ -65,18 +65,8 @@ app.post('/validate-qrcode', async (req, res) => {
         .findOne({name: 'anthony'})
         .catch(err => console.log('error while finding the user', err)); //find the user
 
-      if (code.type === 'seller') {
-        qrOffer = true;
-      } else {
-        await db
-          .collection(COLLECTION_NAME)
-          .updateOne({_id: data}, {$set: {verify:false}}); //remove if one time deal
-        await db
-          .collection('users')
-          .updateOne({name: user.name}, {$inc: {points: 10}});
-        res.json({isValid: true, qrCodeData: code.data});
-      }
-      if (qrOffer === true) {
+      if (code.type === 'offer') {  //if qr code for a seller then it is an offer
+        console.log('owner is(offer)',code.owner);
         if (secondsDifference <= 1000) {//offer time
           console.log('user name', user);
           console.log('the id before checking if it is scanned', code._id);
@@ -101,9 +91,33 @@ app.post('/validate-qrcode', async (req, res) => {
           console.log('ma laha2et halak');
           res.json({isValid: false, qrCodeData: code.data});
         }
+
+
+      } else if (code.type === 'deal'){
+        console.log('owner is(deal)',code.owner);
+        await db
+          .collection(COLLECTION_NAME)
+          .updateOne({_id: data}, {$set: {isDeleted:true}}); //remove if one time deal
+        await db
+          .collection('users')
+          .updateOne({name: user.name}, {$inc: {points: 10}});
+
+        await db.collection('users').updateOne({name:code.owner.toLowerCase()},{$inc:{points:1}});
+        res.json({isValid: true, qrCodeData: code.data});
+
+      } else {  // if the qr code is for a item
+        console.log('owner is',code.owner.toLowerCase());
+        await db
+          .collection('users')
+          .updateOne({name: user.name}, {$inc: {points: 10}});
+
+        await db.collection('users').updateOne({name:code.owner.toLowerCase()},{$inc:{points:1}});
+        
+        await db
+        .collection(COLLECTION_NAME)
+        .updateOne({_id: data}, {$inc: {numberOfScanned:1}}); 
+        res.json({isValid: true, qrCodeData: code.data});
       }
-    } else {
-      res.json({isValid: false});
     }
   } catch (err) {
     console.error('Error validating QR code in MongoDB:', err);
@@ -115,6 +129,7 @@ app.post('/generate-qrcode', async (req, res) => {
   try {
     const {data} = req.body;
     const {qrtype} = req.body;
+    const {user} = req.body;
 
     const qrCode = `QR_${uuidv4()}`;
 
@@ -123,11 +138,17 @@ app.post('/generate-qrcode', async (req, res) => {
       data,
       timestamp: new Date(),
       type: qrtype,
-      isDeleted:false
+      owner:user,
+      numberOfScanned: 0,
+      isDeleted:false,
     };
-
-    const result = await db.collection(COLLECTION_NAME).insertOne(qrCodeData);
-    console.log('QR code image saved to MongoDB:', result.insertedId);
+    const item_exists = await db.collection(COLLECTION_NAME).findOne({data:data,type:qrtype,owner:user,isDeleted:false});
+    if (item_exists){
+      console.log('there is already this item for the shop');
+    } else {
+      const result = await db.collection(COLLECTION_NAME).insertOne(qrCodeData);
+      console.log('QR code image saved to MongoDB:', result.insertedId);
+    }
 
     res.json({qrCode});
   } catch (error) {
@@ -135,6 +156,8 @@ app.post('/generate-qrcode', async (req, res) => {
     res.json({error: 'Could not save QR code image'});
   }
 });
+
+
 
 app.post('/verify-code',async (req,res)=>{
   try {

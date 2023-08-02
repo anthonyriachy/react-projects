@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable react-native/no-inline-styles */
-import {useRef, useState} from 'react';
+import {useRef} from 'react';
 import {Text, View, TouchableOpacity} from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import ViewShot from 'react-native-view-shot';
@@ -18,7 +18,6 @@ interface props{
 }
 export default function Codes({item}:props): JSX.Element {
   const viewShotRef = useRef<ViewShot>(null); // Create a new ref for the ViewShot component
-  const [isDeleted, setIsDeleted] = useState<boolean>(false);
   const shareScreenshot = async (imagePath: string) => {
     try {
       const shareOptions = {
@@ -47,26 +46,25 @@ export default function Codes({item}:props): JSX.Element {
       console.error('Error capturing screenshot:', error);
     }
   };
-  const verifyCode = async (Data: string) => {
-    try {
-      const requestData = {data: Data};
-      const response = await fetch('http://192.168.1.107:3000/verify-code', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData),
-      });
-      const responseData = await response.json();
-      setIsDeleted(true)
-      console.log(responseData.message);
-      return responseData;
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  // const verifyCode = async (Data: string) => {
+  //   try {
+  //     const requestData = {data: Data};
+  //     const response = await fetch('http://192.168.1.107:3000/verify-code', {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify(requestData),
+  //     });
+  //     const responseData = await response.json();
+  //     setIsDeleted(true)
+  //     console.log(responseData.message);
+  //     return responseData;
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // };
   return (
-    !isDeleted ? (
       <>
         <Text style={{ color: 'black' }}>{item.data}</Text>
         <ViewShot ref={viewShotRef}>
@@ -83,7 +81,7 @@ export default function Codes({item}:props): JSX.Element {
             onPress={takeScreenshot}>
             <Text style={{ textAlign: 'center', color: 'white' }}>Share</Text>
           </TouchableOpacity>
-          {item.verify === false ? (
+          {/* {item.verify === false ? (
             <TouchableOpacity
               style={{ padding: 20, backgroundColor: 'green', marginTop: 20, flex: 1 }}
               onPress={() => verifyCode(item._id)}>
@@ -91,10 +89,9 @@ export default function Codes({item}:props): JSX.Element {
                 verify code
               </Text>
             </TouchableOpacity>
-          ) : '' }
+          ) : '' } */}
         </View>
       </>
-    ) : <></>
   );
 }
 

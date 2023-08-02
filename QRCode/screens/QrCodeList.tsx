@@ -27,6 +27,7 @@ function QrCodeList(): JSX.Element {
 
 
   useEffect(() => {
+
     fetch('http://192.168.1.107:3000/qrCodes')
       .then(response => response.json())
       .then(json => {

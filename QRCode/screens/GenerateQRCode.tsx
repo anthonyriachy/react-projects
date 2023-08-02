@@ -1,8 +1,15 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable prettier/prettier */
 /* eslint-disable react-native/no-inline-styles */
 
 import React, {useRef, useState} from 'react';
-import {View, TextInput, TouchableOpacity, Text} from 'react-native';
+import {
+  View,
+  TextInput,
+  TouchableOpacity,
+  Text,
+  ScrollView,
+} from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import RNFS from 'react-native-fs';
 import Share from 'react-native-share';
@@ -12,10 +19,14 @@ interface GenerateQrCodeProps {}
 
 const GenerateQrCode: React.FC<GenerateQrCodeProps> = () => {
   const [input, setInput] = useState<string>('');
-  const [qrValue,   setQrValue] = useState<string>('');
+  const [qrValue, setQrValue] = useState<string>('');
   const viewShotRef = useRef<ViewShot>(null); // Create a new ref for the ViewShot component
+  const [user, setInputUser] = useState<string>('');
 
-  const generateQRCodeAPI = async (data: string, qrtype:string) => {
+  const generateQRCodeAPI = async (
+    data: string,
+    qrtype: string,
+  ) => {
     try {
       const response = await fetch(
         'http://192.168.1.107:3000/generate-qrcode',
@@ -24,7 +35,7 @@ const GenerateQrCode: React.FC<GenerateQrCodeProps> = () => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({data,qrtype}),
+          body: JSON.stringify({data, qrtype, user}),
         },
       );
 
@@ -40,9 +51,9 @@ const GenerateQrCode: React.FC<GenerateQrCodeProps> = () => {
     }
   };
 
-  const saveQrCodeToMongoDB = async (qrtype:string) => {
+  const saveQrCodeToMongoDB = async (qrtype: string) => {
     try {
-      const qrCodeValue = await generateQRCodeAPI(input,qrtype);
+      const qrCodeValue = await generateQRCodeAPI(input, qrtype);
       setQrValue(qrCodeValue); // Set the generated QR code value
     } catch (error) {
       console.error('Error generating QR code:', error);
@@ -80,51 +91,70 @@ const GenerateQrCode: React.FC<GenerateQrCodeProps> = () => {
   };
 
   return (
-    <View>
-      <View style={{alignSelf: 'center', marginTop: 40}}>
-        <ViewShot ref={viewShotRef}>
-          {qrValue ? (
-            <QRCode
-              value={qrValue}
-              size={300}
-              color="white"
-              backgroundColor="black"
-            />
-          ) : (
-            <Text style={{color: 'black'}}>No QR Code generated yet</Text>
-          )}
-        </ViewShot>
+    <ScrollView>
+      <View>
+        <View style={{alignSelf: 'center', marginTop: 40}}>
+          <ViewShot ref={viewShotRef}>
+            {qrValue ? (
+              <QRCode
+                value={qrValue}
+                size={300}
+                color="white"
+                backgroundColor="black"
+              />
+            ) : (
+              <Text style={{color: 'black'}}>No QR Code generated yet</Text>
+            )}
+          </ViewShot>
+        </View>
+        <TextInput
+          style={{backgroundColor: 'white', color: 'black', marginTop: 40}}
+          onChangeText={setInput}
+          value={input}
+          placeholder="enter QR code data"
+          placeholderTextColor={'grey'}
+        />
+        <TextInput
+          style={{backgroundColor: 'white', color: 'black', marginTop: 40}}
+          onChangeText={setInputUser}
+          value={user}
+          placeholder="enter user name"
+          placeholderTextColor={'grey'}
+        />
+        <TouchableOpacity
+          style={{padding: 20, backgroundColor: 'black', marginTop: 40}}
+          onPress={() => saveQrCodeToMongoDB('offer')}>
+          <Text style={{textAlign: 'center', color: 'white'}}>
+            Generate a Qr Code for a offer
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{padding: 20, backgroundColor: 'black', marginTop: 40}}
+          onPress={() => saveQrCodeToMongoDB('item')}>
+          <Text style={{textAlign: 'center', color: 'white'}}>
+            Generate a Qr Code a shop item
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{padding: 20, backgroundColor: 'black', marginTop: 40}}
+          onPress={() => saveQrCodeToMongoDB('deal')}>
+          <Text style={{textAlign: 'center', color: 'white'}}>
+            Generate a Qr Code for one time deal
+          </Text>
+        </TouchableOpacity>
+        {qrValue ? (
+          <TouchableOpacity
+            style={{padding: 20, backgroundColor: 'blue', marginTop: 20}}
+            onPress={takeScreenshot}>
+            <Text style={{textAlign: 'center', color: 'white'}}>
+              Take Screenshot & Share
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <></>
+        )}
       </View>
-      <TextInput
-        style={{backgroundColor: 'white', color: 'black', marginTop: 40}}
-        onChangeText={setInput}
-        value={input}
-        placeholder="enter text"
-        placeholderTextColor={'grey'}
-      />
-
-      <TouchableOpacity
-        style={{padding: 20, backgroundColor: 'black', marginTop: 40}}
-        onPress={()=>saveQrCodeToMongoDB('seller')}>
-        <Text style={{textAlign: 'center', color: 'white'}}>
-          Generate a Qr Code for a offer
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={{padding: 20, backgroundColor: 'black', marginTop: 40}}
-        onPress={()=>saveQrCodeToMongoDB('costumer')}>
-        <Text style={{textAlign: 'center', color: 'white'}}>
-          Generate a Qr Code for one time deal
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={{padding: 20, backgroundColor: 'blue', marginTop: 20}}
-        onPress={takeScreenshot}>
-        <Text style={{textAlign: 'center', color: 'white'}}>
-          Take Screenshot & Share
-        </Text>
-      </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 };
 

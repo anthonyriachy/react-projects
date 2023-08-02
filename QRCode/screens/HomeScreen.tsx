@@ -12,6 +12,11 @@ export default function HomeScreen({ navigation }:props): React.JSX.Element {
     return (
         <View style={style.styleContainer}>
             <View>
+                <TouchableOpacity style={style.styleButton} onPress={()=>navigation.navigate('User')}>
+                    <Text style={{color:'white'}}>My Account</Text>
+                </TouchableOpacity>
+            </View>
+            <View>
                 <TouchableOpacity style={style.styleButton} onPress={()=>navigation.navigate('QRScanner')}>
                     <Text style={{color:'white'}}>Scan QR Code</Text>
                 </TouchableOpacity>

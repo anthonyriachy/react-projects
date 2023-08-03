@@ -18,6 +18,7 @@ const validateQRCodeAPI = async (data,user) => {
     }
 
     const responseData = await response.json();
+    console.log('resonosn:',responseData.item)
     return responseData;
   } catch (error) {
     console.error('Error validating QR code:', error);

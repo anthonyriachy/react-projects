@@ -21,7 +21,6 @@ const COLLECTION_NAME = 'qrcodes';
 
 // db.countDocuments
 
-
 MongoClient.connect(MONGO_URL, {useUnifiedTopology: true})
   .then(client => {
     console.error('Error connecting to MongoDB:');
@@ -34,85 +33,109 @@ MongoClient.connect(MONGO_URL, {useUnifiedTopology: true})
     console.error('error connecting to MongDb:', err);
   });
 
-
-
 //new users
-app.post('/signUp',async(req,res)=>{
+app.post('/signUp', async (req, res) => {
   try {
-    const {email,password} = req.body;
+    const {email, password} = req.body;
     const existingUser = await db.collection('users').findOne({email});
-    if (existingUser){
-      return res.status(400).json({message:'Email already registered'});
+    if (existingUser) {
+      return res.status(400).json({message: 'Email already registered'});
     }
-    const salt = await bcrypt.genSalt(10);//to add complexity to the hashing proccess (it will do it 10 times)
-    const hashedPassword = await bcrypt.hash(password,salt);
-    const newUser = {email,password:hashedPassword};
+    const salt = await bcrypt.genSalt(10); //to add complexity to the hashing proccess (it will do it 10 times)
+    const hashedPassword = await bcrypt.hash(password, salt);
+    const newUser = {email, password: hashedPassword};
     await db.collection('users').insertOne(newUser);
-    res.status(201).json({message:'User register successfully'});
-  } catch (error){
-    res.status(500).json({message:'Failed to register user'});
+    res.status(201).json({message: 'User register successfully'});
+  } catch (error) {
+    res.status(500).json({message: 'Failed to register user'});
   }
 });
 
-app.post('/signIn',async(req,res)=>{
+app.post('/signIn', async (req, res) => {
   try {
-    const {email,password} = req.body;
+    const {email, password} = req.body;
     const user = await db.collection('users').findOne({email});
-    if (!user){
-    return res.status(401).json({message:'Invalid email address'});
+    if (!user) {
+      return res.status(401).json({message: 'Invalid email address'});
     }
-    console.log('user password',user.password);
+    console.log('user password', user.password);
     if (!user.password) {
-      return res.status(401).json({ message: 'User password not found' });
+      return res.status(401).json({message: 'User password not found'});
     }
 
     //compare the password to the hashed password
-    const isPasswordValid = await bcrypt.compare(password,user.password);
-    if (!isPasswordValid){
-      return res.status(401).json({message:'invalid password'});
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({message: 'invalid password'});
     }
-    const token = jwt.sign({ email: user.email }, 'your-secret-key');
-    res.json({ message: 'Login successful', token });
-  } catch (err){
-    console.log('failed to log in ',err);
+    const token = jwt.sign({email: user.email}, 'your-secret-key');
+    res.json({message: 'Login successful', token});
+  } catch (err) {
+    console.log('failed to log in ', err);
   }
 });
 
-app.post('/add-item',async(req,res)=>{ //continur this if not done!!!!!!!!!!!!!!!!!!!!!!!!!11
-  const {itemName} = req.body;
-  const {numberOfItems} = req.body;
-  const {owner} = req.body;
-  const {qrCodeData} = req.body; //i need ot generate the qr code here
+app.post('/add-item', async (req, res) => {
+  //continur this if not done!!!!!!!!!!!!!!!!!!!!!!!!!11
   try {
-    const item = await db.collection('items').insertOne({item:itemName,available:numberOfItems,owner,qrCodeData});
-    console.log('item added ',item);
-    res.json({item});
-  } catch (error){
-    console.log('error adding items',error);
+    const {item} = req.body;
+    const {numberOfItems} = req.body;
+    const {user} = req.body;
+
+    const qrCode = `QR_${uuidv4()}`;
+
+    const newItem = {
+      qrCodeId: qrCode,
+      item,
+      timestamp: new Date(),
+      owner: user,
+      numberOfScanned: 0,
+      available: parseInt(numberOfItems, 10),
+      isDeleted: false,
+    };
+    const item_exists = await db
+    .collection('items')
+    .findOne({owner: user,item,available:{$gt:0}});
+    console.log('item exists',item_exists)
+  if (item_exists) {
+    console.log('there is already this item for the shop');
+
+  } else {
+    await db.collection('items').insertOne(newItem);
+    res.json({qrCode});
+  }
+  res.json({isValid:false})
+  } catch (error) {
+    console.log('error adding items', error);
   }
 });
 
-app.post('/validate-user',async(req,res)=>{
+
+
+
+app.post('/validate-user', async (req, res) => {
   try {
     const {user} = req.body;
-    console.log('user received is ',user);
-    const result = await db.collection('users').findOne({name:user.toLowerCase()});
-    console.log('user received from data base',result);
-    if (!result){
-     res.json({isValid:false});
+    console.log('user received is ', user);
+    const result = await db
+      .collection('users')
+      .findOne({name: user.toLowerCase()});
+    console.log('user received from data base', result);
+    if (!result) {
+      res.json({isValid: false});
     } else {
-      res.json({isValid:true});
+      res.json({isValid: true});
     }
-  } catch (error){
-    console.log('failed to verify:',error);
+  } catch (error) {
+    console.log('failed to verify:', error);
   }
 });
 
 app.post('/qrCodes', (req, res) => {
   let codes = [];
   const {user} = req.body;
-  db.collection('qrcodes')
-    .find({owner:user,isDeleted:false})
+  db.collection('items')
+    .find({owner: user, isDeleted: false, available: {$gt: 0}})
     .forEach(element => codes.push(element))
     .then(() => {
       res.status(200).json(codes);
@@ -128,7 +151,9 @@ app.post('/validate-qrcode', async (req, res) => {
   console.log('Received QR code data on server:', data);
 
   try {
-    const code = await db.collection(COLLECTION_NAME).findOne({_id: data,isDeleted:false}); //find the qr codejl
+    const code = await db
+      .collection('items')
+      .findOne({qrCodeId: data, isDeleted: false}); //find the qr codejl
     console.log('Database query result:', code);
 
     if (code) {
@@ -141,58 +166,62 @@ app.post('/validate-qrcode', async (req, res) => {
         .findOne({name: 'anthony'})
         .catch(err => console.log('error while finding the user', err)); //find the user
 
-      if (code.type === 'offer') {  //if qr code for a seller then it is an offer
-        console.log('owner is(offer)',code.owner);
-        if (secondsDifference <= 1000) {//offer time
+      if (code.type === 'offer') {
+        //if qr code for a seller then it is an offer
+        console.log('owner is(offer)', code.owner);
+        if (secondsDifference <= 1000) {
+          //offer time
           console.log('user name', user);
           console.log('the id before checking if it is scanned', code._id);
-            await db
-              .collection(COLLECTION_NAME)
-              .updateOne({_id: data}, {$inc: {numberOfScanned: 1 }});
+          await db
+            .collection(COLLECTION_NAME)
+            .updateOne({_id: data}, {$inc: {numberOfScanned: 1}});
 
-            if (user.points >= 10) {
-              await db.collection('users').updateOne(
-                {name: user.name},
-                {
-                  $inc: {points: -10},
-                  $push: {scanned: code._id},
-                },
-              );
-            } else {
-              console.log('no points');
-            }
+          if (user.points >= 10) {
+            await db.collection('users').updateOne(
+              {name: user.name},
+              {
+                $inc: {points: -10},
+                $push: {scanned: code._id},
+              },
+            );
+          } else {
+            console.log('no points');
+          }
 
-            res.json({isValid: true, qrCodeData: code.data});
+          res.json({isValid: true, qrCodeData: code.item});
         } else {
           console.log('ma laha2et halak');
-          res.json({isValid: false, qrCodeData: code.data});
+          res.json({isValid: false, qrCodeData: code.item});
         }
-
-
-      } else if (code.type === 'deal'){
-        console.log('owner is(deal)',code.owner);
+      } else if (code.type === 'deal') {
+        console.log('owner is(deal)', code.owner);
         await db
           .collection(COLLECTION_NAME)
-          .updateOne({_id: data}, {$set: {isDeleted:true}}); //remove if one time deal
+          .updateOne({_id: data}, {$set: {isDeleted: true}}); //remove if one time deal
         await db
           .collection('users')
           .updateOne({name: user.name}, {$inc: {points: 10}});
 
-        await db.collection('users').updateOne({name:code.owner.toLowerCase()},{$inc:{points:1}});
-        res.json({isValid: true, qrCodeData: code.data});
-
-      } else {  // if the qr code is for a item
-        console.log('owner is',code.owner.toLowerCase());
+        await db
+          .collection('users')
+          .updateOne({name: code.owner.toLowerCase()}, {$inc: {points: 1}});
+        res.json({isValid: true, qrCodeData: code.item});
+      } else {
+        // if the qr code is for a item
+        console.log('owner is', code.owner.toLowerCase());
         await db
           .collection('users')
           .updateOne({name: user.name}, {$inc: {points: 10}});
 
-        await db.collection('users').updateOne({name:code.owner.toLowerCase()},{$inc:{points:1}});
+        await db
+          .collection('users')
+          .updateOne({name: code.owner.toLowerCase()}, {$inc: {points: 1}});
 
         await db
-        .collection(COLLECTION_NAME)
-        .updateOne({_id: data}, {$inc: {numberOfScanned:1}});
-        res.json({isValid: true, qrCodeData: code.data});
+          .collection(COLLECTION_NAME)
+          .updateOne({_id: data}, {$inc: {numberOfScanned: 1}});
+        res.json({isValid: true, qrCodeData: code.item});
       }
     }
   } catch (err) {
@@ -214,12 +243,15 @@ app.post('/generate-qrcode', async (req, res) => {
       data,
       timestamp: new Date(),
       type: qrtype,
-      owner:user,
+      owner: user,
       numberOfScanned: 0,
-      isDeleted:false,
+      isDeleted: false,
     };
-    const item_exists = await db.collection(COLLECTION_NAME).findOne({data:data,type:qrtype,owner:user,isDeleted:false});
-    if (item_exists){
+
+    const item_exists = await db
+      .collection(COLLECTION_NAME)
+      .findOne({data: data, type: qrtype, owner: user, isDeleted: false});
+    if (item_exists) {
       console.log('there is already this item for the shop');
     } else {
       const result = await db.collection(COLLECTION_NAME).insertOne(qrCodeData);
@@ -233,20 +265,17 @@ app.post('/generate-qrcode', async (req, res) => {
   }
 });
 
-
-
-app.post('/verify-code',async (req,res)=>{
+app.post('/verify-code', async (req, res) => {
   try {
     const {data} = req.body;
-    const code = await db.collection(COLLECTION_NAME).updateOne({_id:data},{$set:{isDeleted:true,verify:true}});
-    res.status(200).json({ message: 'Code verified successfully',code });
-
-  } catch (error){
-    console.log('error while verifying code:',error);
-    res.status(500).json({ error: 'Failed to verify code' });
-
+    const code = await db
+      .collection(COLLECTION_NAME)
+      .updateOne({_id: data}, {$set: {isDeleted: true, verify: true}});
+    res.status(200).json({message: 'Code verified successfully', code});
+  } catch (error) {
+    console.log('error while verifying code:', error);
+    res.status(500).json({error: 'Failed to verify code'});
   }
 });
-
 
 app.use(cors());

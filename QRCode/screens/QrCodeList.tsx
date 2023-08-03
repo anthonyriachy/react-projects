@@ -14,8 +14,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 interface qrcodes {
-  _id: string;
-  data: string;
+  qrCodeId: string;
+  item: string;
   verify: boolean;
   isDeleted: boolean;
 }
@@ -40,7 +40,8 @@ function QrCodeList(): JSX.Element {
     };
     getData();
 
-    console.log(user);
+
+
     fetch('http://192.168.1.107:3000/qrCodes',{
       method:'POST',
       headers:{
@@ -77,8 +78,8 @@ function QrCodeList(): JSX.Element {
         </Text>
 
         {data.map(item => (
-          <View key={item._id} style={{justifyContent: 'center'}}>
-            <Codes item={item} />
+          <View key={item.qrCodeId} style={{justifyContent: 'center'}}>
+            <Codes Item={item} />
           </View>
         ))}
       </View>

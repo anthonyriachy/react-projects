@@ -16,13 +16,14 @@ import ViewShot from 'react-native-view-shot';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
-
 const GenerateQrCode = () => {
-  const [input, setInput] = useState<string>('');
+  //const [input, setInput] = useState<string>('');
+  const [item, setItem] = useState<string>('');
+  const [numberOfItems, setNumberOfItems] = useState<string>('');
   const [qrValue, setQrValue] = useState<string>('');
   const viewShotRef = useRef<ViewShot>(null); // Create a new ref for the ViewShot component
   const [user, setInputUser] = useState<string>('');
-  const [userIsValid,setUserIsValid] = useState<boolean>(false);
+  const [userIsValid, setUserIsValid] = useState<boolean>(false);
   useEffect(() => {
     const getData = async () => {
       try {
@@ -31,16 +32,13 @@ const GenerateQrCode = () => {
           setInputUser(value);
         }
       } catch (e) {
-        console.log('error reading data:',e);
+        console.log('error reading data:', e);
       }
     };
     getData();
   }, []);
 
   const validateUserAPI = async () => {
-
-
-
     try {
       const response = await fetch('http://192.168.1.107:3000/validate-user', {
         method: 'POST',
@@ -50,43 +48,61 @@ const GenerateQrCode = () => {
         body: JSON.stringify({user}),
       });
       const responseData = await response.json();
-      console.log('response data',responseData);
+      console.log('response data', responseData);
 
       setUserIsValid(responseData.isValid);
-    } catch (error){
-      console.log('error validating user',error);
+    } catch (error) {
+      console.log('error validating user', error);
       return error;
     }
   };
 
-  const generateQRCodeAPI = async (data: string, qrtype: string) => {
+  // const generateQRCodeAPI = async (data: string, qrtype: string) => {
+  //   try {
+  //     const response = await fetch(
+  //       'http://192.168.1.107:3000/generate-qrcode',
+  //       {
+  //         method: 'POST',
+  //         headers: {
+  //           'Content-Type': 'application/json',
+  //         },
+  //         body: JSON.stringify({data, qrtype, user}),
+  //       },
+  //     );
+
+  //     if (!response.ok) {
+  //       throw new Error('Failed to generate QR code');
+  //     }
+
+  //     const responseData = await response.json();
+  //     return responseData.qrCode; // Extract the QR code value from the response
+  //   } catch (error) {
+  //     console.error('Error generating QR code:', error);
+  //     throw error;
+  //   }
+  // };
+
+  const addItemAPI = async () => {
     try {
-      const response = await fetch(
-        'http://192.168.1.107:3000/generate-qrcode',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({data, qrtype, user}),
+      const response = await fetch('http://192.168.1.107:3000/add-item', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to generate QR code');
-      }
-
+        body: JSON.stringify({numberOfItems, item, user}),
+      });
       const responseData = await response.json();
-      return responseData.qrCode; // Extract the QR code value from the response
-    } catch (error) {
-      console.error('Error generating QR code:', error);
-      throw error;
+
+      console.log('rsponse:',responseData);
+      return responseData.qrCode;
+    } catch (e) {
+      console.log(e);
     }
   };
 
-  const saveQrCodeToMongoDB = async (qrtype: string) => {
+  const saveQrCodeToMongoDB = async () => {
     try {
-      const qrCodeValue = await generateQRCodeAPI(input, qrtype);
+      const qrCodeValue = await addItemAPI();
       setQrValue(qrCodeValue); // Set the generated QR code value
     } catch (error) {
       console.error('Error generating QR code:', error);
@@ -136,39 +152,59 @@ const GenerateQrCode = () => {
                 backgroundColor="black"
               />
             ) : (
-              <Text style={{color: 'black'}}>No QR Code generated yet,{user}</Text>
+              <Text style={{color: 'black'}}>
+                No QR Code generated yet,{user}
+              </Text>
             )}
           </ViewShot>
         </View>
-        <TextInput
-          style={{backgroundColor: 'white', color: 'black', marginTop: 40}}
-          onChangeText={setInputUser}
-          value={user}
-          placeholder="enter user name"
-          placeholderTextColor={'grey'}
-        />
-        <TouchableOpacity
-          style={{padding: 20, backgroundColor: 'black', marginTop: 40}}
-          onPress={() => validateUserAPI()}>
-          <Text style={{textAlign: 'center', color: 'white'}}>Continue</Text>
-        </TouchableOpacity>
-        {userIsValid ? (
+        {!userIsValid ? (
           <>
             <TextInput
               style={{backgroundColor: 'white', color: 'black', marginTop: 40}}
-              onChangeText={setInput}
-              value={input}
-              placeholder="enter QR code data"
+              onChangeText={setInputUser}
+              value={user}
+              placeholder="enter user name"
               placeholderTextColor={'grey'}
             />
             <TouchableOpacity
               style={{padding: 20, backgroundColor: 'black', marginTop: 40}}
-              onPress={() => saveQrCodeToMongoDB('offer')}>
+              onPress={() => validateUserAPI()}>
               <Text style={{textAlign: 'center', color: 'white'}}>
-                generate a qr code
+                Continue
               </Text>
             </TouchableOpacity>
+          </>
+        ) : (
+          <></>
+        )}
+
+        {userIsValid ? (
+          <>
+            <TextInput
+              style={{backgroundColor: 'white', color: 'black', marginTop: 40}}
+              onChangeText={setItem}
+              value={item}
+              placeholder="enter item name"
+              placeholderTextColor={'grey'}
+            />
+            <TextInput
+              style={{backgroundColor: 'white', color: 'black', marginTop: 40}}
+              onChangeText={setNumberOfItems}
+              value={numberOfItems}
+              placeholder="enter item name"
+              placeholderTextColor={'grey'}
+            />
+
             <TouchableOpacity
+              style={{padding: 20, backgroundColor: 'black', marginTop: 40}}
+              onPress={() => saveQrCodeToMongoDB('item')}>
+              <Text style={{textAlign: 'center', color: 'white'}}>
+                generate the qr code
+              </Text>
+            </TouchableOpacity>
+
+            {/* <TouchableOpacity
               style={{padding: 20, backgroundColor: 'black', marginTop: 40}}
               onPress={() => saveQrCodeToMongoDB('offer')}>
               <Text style={{textAlign: 'center', color: 'white'}}>
@@ -188,7 +224,7 @@ const GenerateQrCode = () => {
               <Text style={{textAlign: 'center', color: 'white'}}>
                 Generate a Qr Code for one time deal
               </Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </>
         ) : (
           <></>

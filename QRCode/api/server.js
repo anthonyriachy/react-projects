@@ -2,12 +2,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const {v4: uuidv4} = require('uuid');
-<<<<<<< HEAD
-
-const {MongoClient, Int32} = require('mongodb');
-=======
 const {MongoClient} = require('mongodb');
->>>>>>> 1d71e2d175be295adb56b714be5891419903f047
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
@@ -23,6 +18,9 @@ const PORT = 3000;
 const MONGO_URL = 'mongodb://localhost:27017';
 const DB_NAME = 'Issuetracker';
 const COLLECTION_NAME = 'qrcodes';
+
+// db.countDocuments
+
 
 MongoClient.connect(MONGO_URL, {useUnifiedTopology: true})
   .then(client => {
@@ -58,7 +56,7 @@ app.post('/signUp',async(req,res)=>{
 
 app.post('/signIn',async(req,res)=>{
   try {
-    const {email,password} = req.body; 
+    const {email,password} = req.body;
     const user = await db.collection('users').findOne({email});
     if (!user){
     return res.status(401).json({message:'Invalid email address'});
@@ -80,11 +78,27 @@ app.post('/signIn',async(req,res)=>{
   }
 });
 
+app.post('/validate-user',async(req,res)=>{
+  try {
+    const {user} = req.body;
+    console.log('user received is ',user);
+    const result = await db.collection('users').findOne({name:user.toLowerCase()});
+    console.log('user received from data base',result);
+    if (!result){
+     res.json({isValid:false});
+    } else {
+      res.json({isValid:true});
+    }
+  } catch (error){
+    console.log('failed to verify:',error);
+  }
+});
 
-app.get('/qrCodes', (req, res) => {
+app.post('/qrCodes', (req, res) => {
   let codes = [];
+  const {user} = req.body;
   db.collection('qrcodes')
-    .find({isDeleted:false})
+    .find({owner:user,isDeleted:false})
     .forEach(element => codes.push(element))
     .then(() => {
       res.status(200).json(codes);
@@ -159,10 +173,10 @@ app.post('/validate-qrcode', async (req, res) => {
           .updateOne({name: user.name}, {$inc: {points: 10}});
 
         await db.collection('users').updateOne({name:code.owner.toLowerCase()},{$inc:{points:1}});
-        
+
         await db
         .collection(COLLECTION_NAME)
-        .updateOne({_id: data}, {$inc: {numberOfScanned:1}}); 
+        .updateOne({_id: data}, {$inc: {numberOfScanned:1}});
         res.json({isValid: true, qrCodeData: code.data});
       }
     }
@@ -185,11 +199,8 @@ app.post('/generate-qrcode', async (req, res) => {
       data,
       timestamp: new Date(),
       type: qrtype,
-<<<<<<< HEAD
       owner:user,
       numberOfScanned: 0,
-=======
->>>>>>> 1d71e2d175be295adb56b714be5891419903f047
       isDeleted:false,
     };
     const item_exists = await db.collection(COLLECTION_NAME).findOne({data:data,type:qrtype,owner:user,isDeleted:false});

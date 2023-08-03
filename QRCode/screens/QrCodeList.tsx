@@ -24,11 +24,19 @@ function QrCodeList(): JSX.Element {
 
   const [data, setData] = useState<qrcodes[]>([]); //initial state to an empty list.
   const [loading, setLoading] = useState(true); //state to indicate if data is being fetched
-
+  const [user, setUser] = useState<string>(''); //initial state to an empty list.
 
   useEffect(() => {
 
-    fetch('http://192.168.1.107:3000/qrCodes')
+    setUser('Anthony');
+    console.log(user);
+    fetch('http://192.168.1.107:3000/qrCodes',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+      },
+      body:JSON.stringify({user}),
+    })
       .then(response => response.json())
       .then(json => {
         console.log('fetched data', json);
@@ -39,7 +47,7 @@ function QrCodeList(): JSX.Element {
         console.log('Error fetching data:', error);
         setLoading(false); // Even if there's an error, set loading to false
       });
-  }, []); //the [] is to call the function only once when the components mount
+  }, [user]); //the [] is to call the function only once when the components mount
 
   if (loading) {
     // Show a loading indicator while data is being fetched

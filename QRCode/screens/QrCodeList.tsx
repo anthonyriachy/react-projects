@@ -9,6 +9,7 @@ import {
   ScrollView,
 } from 'react-native';
 import Codes from './QrCode';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 
@@ -27,8 +28,18 @@ function QrCodeList(): JSX.Element {
   const [user, setUser] = useState<string>(''); //initial state to an empty list.
 
   useEffect(() => {
+    const getData = async () => {
+      try {
+        const value = await AsyncStorage.getItem('my-key');
+        if (value !== null) {
+          setUser(value);
+        }
+      } catch (e) {
+        console.log('error reading data:',e);
+      }
+    };
+    getData();
 
-    setUser('Anthony');
     console.log(user);
     fetch('http://192.168.1.107:3000/qrCodes',{
       method:'POST',

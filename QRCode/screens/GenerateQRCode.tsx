@@ -15,9 +15,9 @@ import Share from 'react-native-share';
 import ViewShot from 'react-native-view-shot';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-interface GenerateQrCodeProps {}
 
-const GenerateQrCode: React.FC<GenerateQrCodeProps> = () => {
+
+const GenerateQrCode = () => {
   const [input, setInput] = useState<string>('');
   const [qrValue, setQrValue] = useState<string>('');
   const viewShotRef = useRef<ViewShot>(null); // Create a new ref for the ViewShot component
@@ -161,6 +161,13 @@ const GenerateQrCode: React.FC<GenerateQrCodeProps> = () => {
               placeholder="enter QR code data"
               placeholderTextColor={'grey'}
             />
+            <TouchableOpacity
+              style={{padding: 20, backgroundColor: 'black', marginTop: 40}}
+              onPress={() => saveQrCodeToMongoDB('offer')}>
+              <Text style={{textAlign: 'center', color: 'white'}}>
+                generate a qr code
+              </Text>
+            </TouchableOpacity>
             <TouchableOpacity
               style={{padding: 20, backgroundColor: 'black', marginTop: 40}}
               onPress={() => saveQrCodeToMongoDB('offer')}>

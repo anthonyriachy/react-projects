@@ -7,11 +7,14 @@ import GenerateQrCode from './GenerateQRCode';
 import HomeScreen from './HomeScreen';
 import QrCodeList from './QrCodeList';
 import User from './user';
+import { UserProvider } from './UserContext';
 
 const Stack = createNativeStackNavigator();
 
 function App(): JSX.Element {
   return (
+    <UserProvider>
+
     <NavigationContainer>
       <Stack.Navigator initialRouteName="HomeScreen">
         <Stack.Screen name="User" component={User} />
@@ -21,6 +24,7 @@ function App(): JSX.Element {
         <Stack.Screen name="QrCodeList" component={QrCodeList} />
       </Stack.Navigator>
     </NavigationContainer>
+    </UserProvider>
   );
 }
 

@@ -78,6 +78,20 @@ app.post('/signIn',async(req,res)=>{
   }
 });
 
+app.post('/add-item',async(req,res)=>{ //continur this if not done!!!!!!!!!!!!!!!!!!!!!!!!!11
+  const {itemName} = req.body;
+  const {numberOfItems} = req.body;
+  const {owner} = req.body;
+  const {qrCodeData} = req.body; //i need ot generate the qr code here
+  try {
+    const item = await db.collection('items').insertOne({item:itemName,available:numberOfItems,owner,qrCodeData});
+    console.log('item added ',item);
+    res.json({item});
+  } catch (error){
+    console.log('error adding items',error);
+  }
+});
+
 app.post('/validate-user',async(req,res)=>{
   try {
     const {user} = req.body;
@@ -110,6 +124,7 @@ app.post('/qrCodes', (req, res) => {
 
 app.post('/validate-qrcode', async (req, res) => {
   const {data} = req.body;
+  const {user} = req.body;
   console.log('Received QR code data on server:', data);
 
   try {

@@ -13,10 +13,12 @@ import {BarCodeReadEvent, RNCamera} from 'react-native-camera';
 import {check, PERMISSIONS, request, RESULTS} from 'react-native-permissions';
 import {launchImageLibrary} from 'react-native-image-picker';
 import {QRreader} from 'react-native-qr-decode-image-camera';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 function QRCodeScanner(): JSX.Element {
   const [scannedData, setScannedData] = useState<string>('');
   const [validationResult, setValidationResult] = useState<string>('');
+  const [user, setUser] = useState<string>('');
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false); //state to indicate if data is being fetched
@@ -26,8 +28,20 @@ function QRCodeScanner(): JSX.Element {
       if (result === RESULTS.DENIED) {
         request(PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE);
       }
+      const getData = async () => {
+        try {
+          const value = await AsyncStorage.getItem('my-key');
+          if (value !== null) {
+            setUser(value);
+          }
+        } catch (e) {
+          console.log('error reading data:',e);
+        }
+      };
+      getData();
+
     });
-  }, []);
+  }, [user]);
 
   const handleBarCodeScanned = ({data}: BarCodeReadEvent) => {
     console.log('scanned QR Code data: ', data);
@@ -38,7 +52,7 @@ function QRCodeScanner(): JSX.Element {
     try {
       setLoading(true);
       console.log('Sending QR code data:', data);
-      const response = await validateQRCodeAPI(data);
+      const response = await validateQRCodeAPI(data,user);
       setValidationResult(
         response.isValid ? 'Valid QR code' : 'Invalid QR code',
       );

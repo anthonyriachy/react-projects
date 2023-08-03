@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 
-const validateQRCodeAPI = async data => {
+const validateQRCodeAPI = async (data,user) => {
   try {
     const response = await fetch(
       'http://192.168.1.107:3000/validate-qrcode',
@@ -9,7 +9,7 @@ const validateQRCodeAPI = async data => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({data}),
+        body: JSON.stringify({data,user}),
       },
     );
 

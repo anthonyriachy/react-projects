@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable react-native/no-inline-styles */
 import React, {useState} from 'react';
-import {View, Text, TextInput, TouchableOpacity,} from 'react-native';
+import {View, Text, TextInput, TouchableOpacity} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const User = () => {
@@ -66,7 +66,6 @@ const User = () => {
 const storeData = async (value:string) => {
   try {
     await AsyncStorage.setItem('my-key', value);
-    AsyncStorage.emit('my-key-changed', value); // Emit a custom event when the key is changed
   } catch (e) {
     console.log('error saving:',e);
   }
@@ -83,7 +82,7 @@ const validateUserAPI = async () => {
     });
     let responseData = await response.json();
 
-    if (userIsValid){
+    if (responseData.isValid){
       console.log(user);
       storeData(user);
     }

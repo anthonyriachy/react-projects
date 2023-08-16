@@ -53,8 +53,9 @@ function QRCodeScanner(): JSX.Element {
       setLoading(true);
       console.log('Sending QR code data:', data);
       const response = await validateQRCodeAPI(data,user);
+
       setValidationResult(
-        response.isValid ? 'Valid QR code' : 'Invalid QR code',
+        response.isValid === true ? 'Valid QR code' : response.isValid,
       );
       setScannedData(response.qrCodeData);
     } catch (error) {

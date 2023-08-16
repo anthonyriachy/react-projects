@@ -6,6 +6,7 @@ import Scanner from './Scanner';
 import GenerateQrCode from './GenerateQRCode';
 import HomeScreen from './HomeScreen';
 import QrCodeList from './QrCodeList';
+import RedeemPoints from './RedeemPoints'
 import User from './user';
 import { UserProvider } from './UserContext';
 
@@ -22,6 +23,7 @@ function App(): JSX.Element {
         <Stack.Screen name="QRScanner" component={Scanner} />
         <Stack.Screen name="QRGenerator" component={GenerateQrCode} />
         <Stack.Screen name="QrCodeList" component={QrCodeList} />
+        <Stack.Screen name="RedeemPoints" component={RedeemPoints}/>
       </Stack.Navigator>
     </NavigationContainer>
     </UserProvider>

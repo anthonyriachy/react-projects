@@ -31,6 +31,11 @@ export default function HomeScreen({ navigation }:props): React.JSX.Element {
                     <Text style={{color:'white'}}>My Items</Text>
                 </TouchableOpacity>
             </View>
+            <View>
+                <TouchableOpacity style={style.styleButton} onPress={()=>navigation.navigate('RedeemPoints')}>
+                    <Text style={{color:'white'}}>Redeem Points</Text>
+                </TouchableOpacity>
+            </View>
         </View>
     );
 }

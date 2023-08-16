@@ -21,3 +21,32 @@ bash
 Copy code
 react-native run-android
 After following these steps, the library should be properly linked, and the warning should no longer appear. Make sure to rebuild your project after linking to apply the changes.
+
+
+
+
+
+  // const generateQRCodeAPI = async (data: string, qrtype: string) => {
+  //   try {
+  //     const response = await fetch(
+  //       'http://192.168.1.107:3000/generate-qrcode',
+  //       {
+  //         method: 'POST',
+  //         headers: {
+  //           'Content-Type': 'application/json',
+  //         },
+  //         body: JSON.stringify({data, qrtype, user}),
+  //       },
+  //     );
+
+  //     if (!response.ok) {
+  //       throw new Error('Failed to generate QR code');
+  //     }
+
+  //     const responseData = await response.json();
+  //     return responseData.qrCode; // Extract the QR code value from the response
+  //   } catch (error) {
+  //     console.error('Error generating QR code:', error);
+  //     throw error;
+  //   }
+  // };

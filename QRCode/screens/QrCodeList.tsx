@@ -7,11 +7,11 @@ import {
   Text,
   ActivityIndicator,
   ScrollView,
+  TouchableOpacity,
+  StyleSheet,
 } from 'react-native';
 import Codes from './QrCode';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-
 
 interface qrcodes {
   qrCodeId: string;
@@ -21,12 +21,10 @@ interface qrcodes {
 }
 
 function QrCodeList(): JSX.Element {
-
-
   const [data, setData] = useState<qrcodes[]>([]); //initial state to an empty list.
   const [loading, setLoading] = useState(true); //state to indicate if data is being fetched
   const [user, setUser] = useState<string>(''); //initial state to an empty list.
-
+  const [selectedQrCode, setSelectedQrCode] = useState<qrcodes | null>(null);
   useEffect(() => {
     const getData = async () => {
       try {
@@ -35,19 +33,17 @@ function QrCodeList(): JSX.Element {
           setUser(value);
         }
       } catch (e) {
-        console.log('error reading data:',e);
+        console.log('error reading data:', e);
       }
     };
     getData();
 
-
-
-    fetch('http://192.168.1.107:3000/qrCodes',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
+    fetch('http://192.168.1.107:3000/qrCodes', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-      body:JSON.stringify({user}),
+      body: JSON.stringify({user}),
     })
       .then(response => response.json())
       .then(json => {
@@ -71,20 +67,59 @@ function QrCodeList(): JSX.Element {
   }
 
   return (
-    <ScrollView>
-      <View style={{flex: 1, gap: 40, alignItems: 'center'}}>
-        <Text style={{color: 'black', fontSize: 50, padding: 20}}>
-          QR Codes:
-        </Text>
+<>
+        {selectedQrCode && (
+          <TouchableOpacity style={styles.overlay}
+            onPress={()=>setSelectedQrCode(null)}
+            >
+            <View
+              style={{
+                backgroundColor: 'white',
+                padding: 20,
+                borderRadius: 10,
+                shadowColor: 'black',
+                shadowOffset: {width: 0, height: 2},
+                shadowOpacity: 0.2,
+                shadowRadius: 4,
+              }}>
+              <Codes Item={selectedQrCode} />
+            </View>
 
-        {data.map(item => (
-          <View key={item.qrCodeId} style={{justifyContent: 'center'}}>
-            <Codes Item={item} />
+          </TouchableOpacity>
+        )}
+        <ScrollView>
+          <View style={{flex: 1, gap: 40, alignItems: 'center'}}>
+            <Text style={{color: 'black', fontSize: 50, padding: 20}}>
+              QR Codes:
+            </Text>
+
+            {data.map(item => (
+              <TouchableOpacity
+                key={item.qrCodeId}
+                onPress={() => setSelectedQrCode(item)}>
+                <View style={{justifyContent: 'center'}}>
+                  <Codes Item={item} />
+                </View>
+              </TouchableOpacity>
+            ))}
           </View>
-        ))}
-      </View>
-    </ScrollView>
+
+      </ScrollView>
+  </>
   );
 }
 
+const styles = StyleSheet.create({
+  overlay:{
+          position: 'absolute',
+          top: 0,
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 999,
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          justifyContent: 'center',
+          alignItems: 'center',
+  },
+});
 export default QrCodeList;

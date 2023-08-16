@@ -1,3 +1,4 @@
+/* eslint-disable eqeqeq */
 /* eslint-disable prettier/prettier */
 /* eslint-disable react-native/no-inline-styles */
 
@@ -9,6 +10,9 @@ import {
   Text,
   ScrollView,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
+
+
 import QRCode from 'react-native-qrcode-svg';
 import RNFS from 'react-native-fs';
 import Share from 'react-native-share';
@@ -24,6 +28,13 @@ const GenerateQrCode = () => {
   const viewShotRef = useRef<ViewShot>(null); // Create a new ref for the ViewShot component
   const [user, setInputUser] = useState<string>('');
   const [userIsValid, setUserIsValid] = useState<boolean>(false);
+  const [price, setPrice] = useState<string>('');
+  const [selectedDate, setSelectedDate] = useState < Date | undefined >(undefined);
+  const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
+  const [userType,setUserType] = useState<string>('');
+
+
+
   useEffect(() => {
     const getData = async () => {
       try {
@@ -38,6 +49,14 @@ const GenerateQrCode = () => {
     getData();
   }, []);
 
+  const handleDateChange = (event:any,date?:Date)=>{
+    if (date != undefined){
+      setSelectedDate(date);
+    }
+    setShowDatePicker(false);
+  };
+
+
   const validateUserAPI = async () => {
     try {
       const response = await fetch('http://192.168.1.107:3000/validate-user', {
@@ -51,49 +70,29 @@ const GenerateQrCode = () => {
       console.log('response data', responseData);
 
       setUserIsValid(responseData.isValid);
+
+      setUserType(responseData.type);
     } catch (error) {
       console.log('error validating user', error);
       return error;
     }
   };
 
-  // const generateQRCodeAPI = async (data: string, qrtype: string) => {
-  //   try {
-  //     const response = await fetch(
-  //       'http://192.168.1.107:3000/generate-qrcode',
-  //       {
-  //         method: 'POST',
-  //         headers: {
-  //           'Content-Type': 'application/json',
-  //         },
-  //         body: JSON.stringify({data, qrtype, user}),
-  //       },
-  //     );
-
-  //     if (!response.ok) {
-  //       throw new Error('Failed to generate QR code');
-  //     }
-
-  //     const responseData = await response.json();
-  //     return responseData.qrCode; // Extract the QR code value from the response
-  //   } catch (error) {
-  //     console.error('Error generating QR code:', error);
-  //     throw error;
-  //   }
-  // };
 
   const addItemAPI = async () => {
     try {
+      // dateChanged == false ? setSelectedDate(undefined) : selectedDate;
+
       const response = await fetch('http://192.168.1.107:3000/add-item', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({numberOfItems, item, user}),
+        body: JSON.stringify({numberOfItems, item, user, price,selectedDate}),
       });
       const responseData = await response.json();
 
-      console.log('rsponse:',responseData);
+      console.log('rsponse:', responseData);
       return responseData.qrCode;
     } catch (e) {
       console.log(e);
@@ -192,18 +191,46 @@ const GenerateQrCode = () => {
               style={{backgroundColor: 'white', color: 'black', marginTop: 40}}
               onChangeText={setNumberOfItems}
               value={numberOfItems}
-              placeholder="enter item name"
+              placeholder="enter number of items"
               placeholderTextColor={'grey'}
             />
+            <TextInput
+              style={{backgroundColor: 'white', color: 'black', marginTop: 40,marginBottom:40}}
+              onChangeText={setPrice}
+              value={price}
+              placeholder="enter the price of the item"
+              placeholderTextColor={'grey'}
+            />
+      <View>
+{userType == 'seller' &&
+      showDatePicker && (
+        <DateTimePicker
+          value={selectedDate || new Date() }
+          mode="date"
+          display="default" // Use "default" for Android
+          onChange={(event,date)=>handleDateChange(event,date)}
+        />
+      )}
+      {selectedDate && <Text style={{color:'black'}}>Selected Date: {selectedDate.toDateString()}</Text>}
+      {userType == 'seller' && <TouchableOpacity
+      style={{padding: 20, backgroundColor: 'black', marginTop: 20}}
+      onPress={() => setShowDatePicker(true)}>
+      <Text style={{textAlign: 'center', color: 'white'}}>
+        (optinal) Select Expiration Date
+      </Text>
+    </TouchableOpacity>}
+
+
+    </View>
+
 
             <TouchableOpacity
               style={{padding: 20, backgroundColor: 'black', marginTop: 40}}
-              onPress={() => saveQrCodeToMongoDB('item')}>
+              onPress={() => saveQrCodeToMongoDB()}>
               <Text style={{textAlign: 'center', color: 'white'}}>
                 generate the qr code
               </Text>
             </TouchableOpacity>
-
             {/* <TouchableOpacity
               style={{padding: 20, backgroundColor: 'black', marginTop: 40}}
               onPress={() => saveQrCodeToMongoDB('offer')}>

@@ -3,7 +3,7 @@
 const validateQRCodeAPI = async (data,user) => {
   try {
     const response = await fetch(
-      'http://192.168.1.107:3000/validate-qrcode',
+      'http://192.168.1.107:3000/validate-qrCode',
       {
         method: 'POST',
         headers: {
@@ -18,7 +18,6 @@ const validateQRCodeAPI = async (data,user) => {
     }
 
     const responseData = await response.json();
-    console.log('resonosn:',responseData.item)
     return responseData;
   } catch (error) {
     console.error('Error validating QR code:', error);

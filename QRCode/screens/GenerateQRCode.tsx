@@ -18,6 +18,7 @@ import RNFS from 'react-native-fs';
 import Share from 'react-native-share';
 import ViewShot from 'react-native-view-shot';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import addToUnscannedAPI from '../api/addToUnscanned';
 
 
 const GenerateQrCode = () => {
@@ -96,7 +97,7 @@ const GenerateQrCode = () => {
       return responseData.qrCode;
     } catch (e) {
       console.log(e);
-    }
+    } 
   };
 
   const saveQrCodeToMongoDB = async () => {
@@ -115,6 +116,7 @@ const GenerateQrCode = () => {
         url: `file://${imagePath}`,
         failOnCancel: false,
       };
+      await addToUnscannedAPI(user,qrValue);
       await Share.open(shareOptions);
     } catch (error) {
       console.error('Error sharing screenshot:', error);

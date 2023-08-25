@@ -1,3 +1,4 @@
+/* eslint-disable eqeqeq */
 /* eslint-disable prettier/prettier */
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -89,7 +90,7 @@ app.post('/add-item', async (req, res) => {
     if (selectedDate !== undefined) {
       newItem = {
         item,
-        price:parseInt(price, 10),
+        price: parseInt(price, 10),
         qrCodeId: qrCode,
         timestamp: new Date(),
         owner: user,
@@ -101,7 +102,7 @@ app.post('/add-item', async (req, res) => {
     } else {
       newItem = {
         item,
-        price:parseInt(price, 10),
+        price: parseInt(price, 10),
         qrCodeId: qrCode,
         timestamp: new Date(),
         owner: user,
@@ -164,14 +165,16 @@ app.post('/validate-qrCode', async (req, res) => {
     const {data} = req.body;
     const userName = req.body.user;
 
-    const result = await db
+    let result = await db
       .collection('items')
       .findOne({qrCodeId: data, isDeleted: false});
     if (result) {
       //item in database
       console.log('userName', userName);
       if (userName) {
-        const user = await db.collection('users').findOne({name: userName.toLowerCase()});
+        const user = await db
+          .collection('users')
+          .findOne({name: userName.toLowerCase()});
 
         if (result.owner.toLowerCase() !== user.name.toLowerCase()) {
           //user scanning his own qr code
@@ -182,7 +185,6 @@ app.post('/validate-qrCode', async (req, res) => {
               //item has expiration date (offer)
               const qrDate = new Date(result.expiration).getTime();
               const currentDate = new Date().getTime();
-              const timeDifference = qrDate - currentDate;
 
               if (qrDate >= currentDate) {
                 //item has not expired
@@ -190,25 +192,36 @@ app.post('/validate-qrCode', async (req, res) => {
                   //user has enough points?
 
                   //remove points because of the offer.
-
-                  let pointToRemove=result.price //to be done later.
+                  let pointToRemove;
+                  if (user.level == 'welcome') {
+                    //decide the number of points based of the users level.
+                    pointToRemove = result.price * 3;
+                  } else if (user.level == 'bronze' || user.level == 'silver') {
+                    pointToRemove = result.price * 4;
+                  } else {
+                    pointToRemove = result.price * 5;
+                  }
 
                   await db.collection('items').updateOne(
+                    //update the item
                     {qrCodeId: data, isDeleted: false},
-                    {$inc: {available: -1, numberOfScanned: 1,qrCodeId:`QR_${uuidv4()}`}}, // remove 1 fron the item and add number of scanned
+                    {
+                      $inc: {available: -1, numberOfScanned: 1},
+                      $set: {qrCodeId: `QR_${uuidv4()}`},
+                    }, // remove 1 from the item, add number of scanned, and change the items qr code
                   );
 
                   await db.collection('users').updateOne(
+                    //update the one that scanned
                     {name: userName.toLowerCase()},
                     {
-                      $inc: {points: -10},
-                      $push: {scanned: result._id},
+                      $inc: {points: -pointToRemove}, //remove the points for the offer
+                      $push: {scanned: result._id}, //the the qr code to the list of qr codes
                     },
                   );
 
-                  await db
-                    .collection('users')
-                    .updateOne(
+                  await db.collection('users').updateOne(
+                    //update item owner
                       {name: result.owner.toLowerCase()},
                       {$inc: {points: 1}},
                     ); //add points for the shop owner
@@ -223,7 +236,7 @@ app.post('/validate-qrCode', async (req, res) => {
                 }
               } else {
                 //item has expired
-                // await db
+                // await db //deleting the item
                 //   .collection('items')
                 //   .updateOne(
                 //     {qrCodeId: data, isDeleted: false},
@@ -234,48 +247,82 @@ app.post('/validate-qrCode', async (req, res) => {
                   qrCodeData: result.item,
                 });
               }
-            } else {
-              //item does not have an expiration date.(not offer)
-              await db
-                .collection('items')
-                .updateOne(
-                  {qrCodeId: data, isDeleted: false},
-                  {$inc: {available: -1, numberOfScanned: 1},qrCodeId:`QR_${uuidv4()}`}, //change the qr code maybe $set
-                );
+            } else { // (not offer)
+              //item does not have  an expiration date.
+              await db.collection('items').updateOne(
+                {qrCodeId: data, isDeleted: false},
+                {
+                  $inc: {available: -1, numberOfScanned: 1},
+                  $set: {qrCodeId: `QR_${uuidv4()}`},
+                }, //change the qr code
+              );
 
-              let pointsToAdd = result.price / 3;
-              pointsToAdd = parseFloat(pointsToAdd.toFixed(1));
+              //belowe i check if the user shohuld be in the next level
+              //!!!!!!!!!!!!change them to check only money not the level, if the users first purchase was big
+              if (
+                user.level == 'welcome' &&
+                user.totalMoneySpent >= 250 &&
+                user.totalMoneySpent < 500
+              ) {
+                await db
+                  .collection('users')
+                  .updateOne({name: user.name}, {$set: {level: 'bronze'}});
+              } else if (
+                user.level == 'bronze' &&
+                user.totalMoneySpent >= 500 &&
+                user.totalMoneySpent < 1500
+              ) {
+                await db
+                  .collection('users')
+                  .updateOne({name: user.name}, {$set: {level: 'silver'}});
+              } else if (
+                user.level == 'silver' &&
+                user.totalMoneySpent >= 1500
+              ) {
+                await db
+                  .collection('users')
+                  .updateOne({name: user.name}, {$set: {level: 'gold'}});
+              }
+              //below we check which level the user is and how many points the user willl get
+              let pointsToAdd;
+              if (user.level == 'welcome') {
+                pointsToAdd = result.price * 3;
+                //1 $= 3 points
+              } else if (user.level == 'bronze' || user.level == 'silver') {
+                pointsToAdd = result.price * 4;
+                //1 $= 4points
+              } else if (user.level == 'gold') {
+                pointsToAdd = result.price * 5;
+                //1$ = 5points
+              }
 
-              await db.collection('users').updateOne(
+              await db.collection('users').updateOne(//add points for the user, add to the total money he spent, and the qr code to the of items
                 {name: userName.toLowerCase()},
                 {
-                  $inc: {points: pointsToAdd},
+                  $inc: {points: pointsToAdd, totalMoneySpent: result.price},
                   $push: {scanned: result._id},
                 },
-              ); //add points for the user
+              );
 
-              await db
-              .collection('users')
-              .updateOne(
-                {name: result.owner.toLowerCase()},
-                {$inc: {points: 1}},
-              ); //add points for the shop owner
+              await db.collection('users').updateOne( //add points for the shop owner
+                  {name: result.owner.toLowerCase()},
+                  {$inc: {points: 1}},
+                );
 
               res.json({isValid: true, qrCodeData: result.item});
             }
           } else {
             //no more item available
-             res.json({
+            res.json({
               isValid: 'there is no more items available',
               qrCodeData: result.item,
             });
-            // await db
+            // await db // deleting the item
             //   .collection('items')
             //   .updateOne(
             //     {qrCodeId: data, isDeleted: false},
             //     {$set: {isDeleted: true}},
             //   );
-
           }
         } else {
           //scanning own qr code
@@ -286,15 +333,132 @@ app.post('/validate-qrCode', async (req, res) => {
           });
         }
       } else {
-        res.json({isValid: 'not logged in',qrCodeData:data});
+        res.json({isValid: 'not logged in', qrCodeData: data});
       }
     } else {
-      res.json({isValid: 'item not in database', qrCodeData: data});
+      console.log('data',data);
+      result = await db.collection('users').find({unscanned:data}).toArray((err, users) => {
+        if (err) {
+          console.error('Error finding users:', err);
+          return;
+      }});
+      if (result.length!==0){ // check if it is in the unscanned list
+        await  db.collection('users').updateOne({name:result[0].name},{$pull:{unscanned:data}});//!!!!!!#### change points after this 
+        res.json({qrCodeData:res.name})
+      }else{
+        console.log('item not found')
+      }
+      res.json({qrCodeData: data});
     }
   } catch (error) {
     console.log('error validatiig qr code: ', error);
   }
 });
+
+app.post('/redeem_points', async (req, res) => {
+  try {
+    const {points} = req.body;
+    const {user} = req.body;
+    if (user) {
+      const userName = await db
+        .collection('users')
+        .findOne({name: user.toLowerCase()});
+      if (userName) {
+        if (points == 500) {
+          if (userName.points >= 500) {
+            await db
+              .collection('users')
+              .updateOne(
+                {name: userName.name},
+                {$inc: {points: -500}, $push: {vouchers: 5}},
+              );
+            res.json({isValid: 'you bought 5 dollars, enjoy'});
+          } //user has 500 points
+          else {
+            //user has no points
+            res.json({isValid: 'not enough points'});
+          }
+        } //points==500
+
+        if (points == 1000) {
+          if (userName.points >= 1000) {
+            await db
+              .collection('users')
+              .updateOne(
+                {name: userName.name},
+                {$inc: {points: -1000}, $push: {vouchers: 10}},
+              );
+            res.json({isValid: 'you bought 10 dollars, enjoy'});
+          } //user has 1000 points
+          else {
+            //user has no points
+            res.json({isValid: 'not enough points'});
+          }
+        } //points == 1000
+        if (points == 2500) {
+          if (userName.points >= 2500) {
+            await db
+              .collection('users')
+              .updateOne(
+                {name: userName.name},
+                {$inc: {points: -2500}, $push: {vouchers: 25}},
+              );
+            res.json({isValid: 'you bought 25 dollars, enjoy'});
+          } //user has 2500 points
+          else {
+            //user has no points
+            res.json({isValid: 'not enough points'});
+          }
+        } //points == 2500
+
+        if (points == 5000) {
+          if (userName.points >= 5000) {
+            await db
+              .collection('users')
+              .updateOne(
+                {name: userName.name},
+                {$inc: {points: -5000}, $push: {vouchers: 50}},
+              );
+            res.json({isValid: 'you bought 50 dollars, enjoy'});
+          } //user has 1000 points
+          else {
+            //user has no points
+            res.json({isValid: 'not enough points'});
+          }
+        } //points == 5000
+      }
+    } else {
+      res.json({isValid: 'sign in'});
+    }
+  } catch (err) {
+    console.log('error buying a voucher', err);
+  }
+});
+
+app.post('/addToUnscanned',async(req,res)=>{
+  try {
+    const qrCode = req.body.qrCodeId;
+    const owner = req.body.owner;
+    console.log('qrcode:',qrCode,'owner:',owner);
+    if (owner && qrCode){
+      const result = await db.collection('users').updateOne({name:owner.toLowerCase()},{$push:{unscanned:qrCode}});
+
+      await db.collection('items').updateOne({qrCodeId:qrCode},{$set: {qrCodeId: `QR_${uuidv4()}`}});
+      if (result){
+        res.json({result});
+      } else {
+        res.json({isValid:'owner not found'});
+      }
+    }
+    res.json({isValid:false});
+
+  } catch (error){
+
+
+  }
+
+  }
+);
 
 // app.post('/validate-qrcode', async (req, res) => {
 //   const {data} = req.body;

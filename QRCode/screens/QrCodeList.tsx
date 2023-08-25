@@ -15,6 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface qrcodes {
   qrCodeId: string;
+  owner:string;
   item: string;
   verify: boolean;
   isDeleted: boolean;
@@ -47,7 +48,6 @@ function QrCodeList(): JSX.Element {
     })
       .then(response => response.json())
       .then(json => {
-        console.log('fetched data', json);
         setData(json);
         setLoading(false); // Once data is fetched, set loading to false
       })
@@ -68,7 +68,7 @@ function QrCodeList(): JSX.Element {
 
   return (
 <>
-        {selectedQrCode && (
+        {selectedQrCode && ( // pop-up when the user select the qr code
           <TouchableOpacity style={styles.overlay}
             onPress={()=>setSelectedQrCode(null)}
             >

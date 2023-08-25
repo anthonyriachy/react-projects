@@ -7,16 +7,19 @@ import ViewShot from 'react-native-view-shot';
 import RNFS from 'react-native-fs';
 import Share from 'react-native-share';
 import React from 'react';
+import addToUnscannedAPI from '../api/addToUnscanned';
 
 
 interface props{
     Item:{
         qrCodeId:string,
+        owner:string,
         item:string,
         verify:boolean,
     }
 }
 export default function Codes({Item}:props): JSX.Element {
+
   const viewShotRef = useRef<ViewShot>(null); // Create a new ref for the ViewShot component
   const shareScreenshot = async (imagePath: string) => {
     try {
@@ -25,7 +28,9 @@ export default function Codes({Item}:props): JSX.Element {
         url: `file://${imagePath}`,
         failOnCancel: false,
       };
+      await addToUnscannedAPI(Item.owner,Item.qrCodeId);
       await Share.open(shareOptions);
+      console.log('beofre sending:',Item.owner,Item.qrCodeId);
     } catch (error) {
       console.error('Error sharing screenshot:', error);
     }
@@ -46,24 +51,7 @@ export default function Codes({Item}:props): JSX.Element {
       console.error('Error capturing screenshot:', error);
     }
   };
-  // const verifyCode = async (item: string) => {
-  //   try {
-  //     const requestitem = {item: item};
-  //     const response = await fetch('http://192.168.1.107:3000/verify-code', {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //       body: JSON.stringify(requestitem),
-  //     });
-  //     const responseitem = await response.json();
-  //     setIsDeleted(true)
-  //     console.log(responseitem.message);
-  //     return responseitem;
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // };
+
   return (
       <>
         <Text style={{ color: 'black' }}>{Item.item}</Text>
@@ -81,15 +69,6 @@ export default function Codes({Item}:props): JSX.Element {
             onPress={takeScreenshot}>
             <Text style={{ textAlign: 'center', color: 'white' }}>Share</Text>
           </TouchableOpacity>
-          {/* {Item.verify === false ? (
-            <TouchableOpacity
-              style={{ padding: 20, backgroundColor: 'green', marginTop: 20, flex: 1 }}
-              onPress={() => verifyCode(Item._id)}>
-              <Text style={{ textAlign: 'center', color: 'white' }}>
-                verify code
-              </Text>
-            </TouchableOpacity>
-          ) : '' } */}
         </View>
       </>
   );
